@@ -1,3 +1,36 @@
+// Instância global do update checker
+let updateCheckerInstance = null;
+
+// Função para atualizar o banner de atualização
+function updateBanner(updateInfo) {
+  const updateBanner = document.getElementById('updateBanner');
+  const currentVersionEl = document.getElementById('currentVersion');
+  const remoteVersionEl = document.getElementById('remoteVersion');
+  const updateLink = document.getElementById('updateLink');
+
+  if (updateInfo && updateInfo.hasUpdate) {
+    // Mostrar banner de atualização (permanente)
+    currentVersionEl.textContent = updateInfo.currentVersion;
+    remoteVersionEl.textContent = updateInfo.remoteVersion;
+    updateLink.href = updateInfo.repoUrl;
+    updateBanner.classList.add('show');
+  } else {
+    // Ocultar banner se não houver atualização
+    updateBanner.classList.remove('show');
+  }
+}
+
+// Verificar atualizações ao abrir o popup
+(async () => {
+  try {
+    updateCheckerInstance = new UpdateChecker();
+    const updateInfo = await updateCheckerInstance.checkAndSave(false);
+    updateBanner(updateInfo);
+  } catch (error) {
+    console.error('Erro ao verificar atualizações:', error);
+  }
+})();
+
 // Verificar se está no Zeev ao abrir o popup e mostrar botões apropriados
 (async () => {
   try {
@@ -153,6 +186,59 @@ function updateMonthPreview() {
 
 // Atualizar preview quando o usuário digitar
 document.getElementById('monthFormat').addEventListener('input', updateMonthPreview);
+
+// Botão para buscar atualizações manualmente
+document.getElementById('checkUpdateBtn').addEventListener('click', async () => {
+  const statusDiv = document.getElementById('status');
+  const checkUpdateBtn = document.getElementById('checkUpdateBtn');
+
+  try {
+    // Desabilitar botão e mostrar status de carregamento
+    checkUpdateBtn.disabled = true;
+    checkUpdateBtn.textContent = 'Verificando...';
+    statusDiv.className = 'status';
+    statusDiv.textContent = 'Verificando atualizações...';
+
+    // Forçar verificação de atualizações
+    if (!updateCheckerInstance) {
+      updateCheckerInstance = new UpdateChecker();
+    }
+
+    const updateInfo = await updateCheckerInstance.checkAndSave(true);
+
+    // Atualizar banner
+    updateBanner(updateInfo);
+
+    // Mostrar resultado
+    if (updateInfo.hasUpdate) {
+      statusDiv.className = 'status success';
+      statusDiv.textContent = `Nova versão ${updateInfo.remoteVersion} disponível!`;
+    } else if (updateInfo.error) {
+      statusDiv.className = 'status error';
+      statusDiv.textContent = `Erro: ${updateInfo.error}`;
+    } else {
+      statusDiv.className = 'status success';
+      statusDiv.textContent = 'Você está usando a versão mais recente!';
+    }
+
+    setTimeout(() => {
+      statusDiv.textContent = '';
+      statusDiv.className = 'status';
+    }, 4000);
+
+  } catch (error) {
+    statusDiv.className = 'status error';
+    statusDiv.textContent = 'Erro ao verificar: ' + error.message;
+    setTimeout(() => {
+      statusDiv.textContent = '';
+      statusDiv.className = 'status';
+    }, 3000);
+  } finally {
+    // Re-habilitar botão
+    checkUpdateBtn.disabled = false;
+    checkUpdateBtn.textContent = 'Buscar Atualizações';
+  }
+});
 
 // Botão para mostrar/ocultar opções
 document.getElementById('optionsBtn').addEventListener('click', () => {
