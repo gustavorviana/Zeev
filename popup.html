@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    body {
+      width: 300px;
+      padding: 15px;
+      font-family: Arial, sans-serif;
+    }
+    button {
+      width: 100%;
+      padding: 10px;
+      margin: 5px 0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .fill-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .fill-btn:hover {
+      background-color: #45a049;
+    }
+    .load-btn {
+      background-color: #FF9800;
+      color: white;
+    }
+    .load-btn:hover {
+      background-color: #e68900;
+    }
+    .config-btn {
+      background-color: #2196F3;
+      color: white;
+    }
+    .config-btn:hover {
+      background-color: #0b7dda;
+    }
+    .status {
+      margin-top: 10px;
+      padding: 8px;
+      border-radius: 4px;
+      text-align: center;
+      font-size: 12px;
+    }
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+    .warning {
+      background-color: #fff3cd;
+      color: #856404;
+    }
+  </style>
+</head>
+<body>
+  <h3>Zeev Form Auto Fill</h3>
+  <button id="fillForm" class="fill-btn">Preencher Formulário</button>
+  <button id="loadFromPage" class="load-btn">Carregar da Página</button>
+  <button id="openConfig" class="config-btn">Configurar Dados</button>
+  <div id="status"></div>
+  <script src="popup.js"></script>
+</body>
+</html>
