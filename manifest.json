@@ -9,7 +9,8 @@
     "scripting"
   ],
   "host_permissions": [
-    "https://solutta.zeev.it/*"
+    "https://solutta.zeev.it/*",
+    "https://portal-zeev.azurewebsites.net/*"
   ],
   "action": {
     "default_popup": "popup.html",
