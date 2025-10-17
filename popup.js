@@ -98,6 +98,123 @@
   }
 })();
 
+// Carregar configurações salvas ao abrir o popup
+(async () => {
+  try {
+    const data = await chrome.storage.sync.get('monthFormat');
+    const monthFormatInput = document.getElementById('monthFormat');
+
+    if (data.monthFormat) {
+      monthFormatInput.value = data.monthFormat;
+      updateMonthPreview();
+    } else {
+      // Valor padrão
+      monthFormatInput.value = '{mes} - {mesNome}/{ano}';
+      updateMonthPreview();
+    }
+  } catch (error) {
+    console.error('Erro ao carregar configurações:', error);
+  }
+})();
+
+// Função para obter nome do mês em português
+function getMonthName(monthNumber) {
+  const months = [
+    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+  ];
+  return months[monthNumber - 1] || '';
+}
+
+// Função para formatar o mês de acordo com o template
+function formatMonth(template) {
+  const now = new Date();
+  const monthNumber = now.getMonth() + 1;
+  const monthName = getMonthName(monthNumber);
+  const year = now.getFullYear();
+
+  return template
+    .replace(/{mes}/g, monthNumber)
+    .replace(/{mesNome}/g, monthName)
+    .replace(/{ano}/g, year);
+}
+
+// Função para atualizar o preview do formato
+function updateMonthPreview() {
+  const monthFormatInput = document.getElementById('monthFormat');
+  const preview = document.getElementById('monthPreview');
+
+  if (monthFormatInput.value.trim()) {
+    preview.textContent = formatMonth(monthFormatInput.value);
+  } else {
+    preview.textContent = '-';
+  }
+}
+
+// Atualizar preview quando o usuário digitar
+document.getElementById('monthFormat').addEventListener('input', updateMonthPreview);
+
+// Botão para mostrar/ocultar opções
+document.getElementById('optionsBtn').addEventListener('click', () => {
+  const optionsSection = document.getElementById('optionsSection');
+  const optionsButtonContainer = document.getElementById('optionsButtonContainer');
+
+  optionsButtonContainer.style.display = 'none';
+  optionsSection.style.display = 'block';
+});
+
+// Botão para fechar opções
+document.getElementById('closeOptionsBtn').addEventListener('click', () => {
+  const optionsSection = document.getElementById('optionsSection');
+  const optionsButtonContainer = document.getElementById('optionsButtonContainer');
+
+  optionsSection.style.display = 'none';
+  optionsButtonContainer.style.display = 'block';
+});
+
+// Botão para salvar configurações
+document.getElementById('saveOptions').addEventListener('click', async () => {
+  const statusDiv = document.getElementById('status');
+  const monthFormatInput = document.getElementById('monthFormat');
+
+  try {
+    const monthFormat = monthFormatInput.value.trim();
+
+    if (!monthFormat) {
+      statusDiv.className = 'status warning';
+      statusDiv.textContent = 'Por favor, preencha o formato de mês!';
+      setTimeout(() => {
+        statusDiv.textContent = '';
+        statusDiv.className = 'status';
+      }, 3000);
+      return;
+    }
+
+    // Salvar configuração
+    await chrome.storage.sync.set({ monthFormat: monthFormat });
+
+    statusDiv.className = 'status success';
+    statusDiv.textContent = 'Configurações salvas com sucesso!';
+
+    setTimeout(() => {
+      statusDiv.textContent = '';
+      statusDiv.className = 'status';
+
+      // Fechar seção de opções
+      document.getElementById('optionsSection').style.display = 'none';
+      document.getElementById('optionsButtonContainer').style.display = 'block';
+    }, 2000);
+
+  } catch (error) {
+    statusDiv.className = 'status error';
+    statusDiv.textContent = 'Erro ao salvar: ' + error.message;
+    setTimeout(() => {
+      statusDiv.textContent = '';
+      statusDiv.className = 'status';
+    }, 3000);
+  }
+});
+
 // Botão para mostrar a seção de busca
 document.getElementById('toggleSearchBtn').addEventListener('click', () => {
   const toggleSearchContainer = document.getElementById('toggleSearchContainer');
@@ -156,8 +273,8 @@ document.getElementById('fillForm').addEventListener('click', async () => {
       return;
     }
 
-    // Get saved data
-    const data = await chrome.storage.sync.get('formData');
+    // Get saved data and month format
+    const data = await chrome.storage.sync.get(['formData', 'monthFormat']);
 
     if (!data.formData) {
       statusDiv.className = 'status warning';
@@ -165,11 +282,14 @@ document.getElementById('fillForm').addEventListener('click', async () => {
       return;
     }
 
+    // Usar formato padrão se não houver configuração
+    const monthFormat = data.monthFormat || '{mes} - {mesNome}/{ano}';
+
     // Inject and execute content script
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       function: fillFormFields,
-      args: [data.formData]
+      args: [data.formData, monthFormat]
     });
 
     statusDiv.className = 'status success';
@@ -517,7 +637,7 @@ document.getElementById('fileInput').addEventListener('change', async (event) =>
 
 
 // This function will be injected into the page
-function fillFormFields(savedData) {
+function fillFormFields(savedData, monthFormat) {
   // Verifica se está em um iframe e redireciona se necessário
   const iframe = document.querySelector("iframe");
   if (iframe) {
@@ -526,6 +646,26 @@ function fillFormFields(savedData) {
       return;
     }
   }
+
+  // Função para formatar o mês de acordo com o template
+  function formatMonth(template) {
+    const now = new Date();
+    const monthNumber = now.getMonth() + 1;
+    const monthNames = [
+      'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+      'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
+    ];
+    const monthName = monthNames[monthNumber - 1];
+    const year = now.getFullYear();
+
+    return template
+      .replace(/{mes}/g, monthNumber)
+      .replace(/{mesNome}/g, monthName)
+      .replace(/{ano}/g, year);
+  }
+
+  // Formatar o mês usando o template configurado
+  const formattedMonth = monthFormat ? formatMonth(monthFormat) : ((new Date().getMonth() + 1) + " - " + new Date().getFullYear());
 
   // Prepara os dados com valores automáticos
   const data = {
@@ -549,7 +689,7 @@ function fillFormFields(savedData) {
     inpcpf: savedData.inpcpf || "",
     inpchavePix: savedData.inpchavePix || "",
     inpobs: savedData.inpobs || "",
-    inpmes: (new Date().getMonth() + 1) + " - " + new Date().getFullYear(),
+    inpmes: formattedMonth,
     inpvalorTotalR: savedData.inpvalorTotalR || "",
     inpnrCentroDeCusto: savedData.inpnrCentroDeCusto || "",
     inpempresaPagadora: savedData.inpempresaPagadora || "",

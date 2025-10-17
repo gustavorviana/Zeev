@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Zeev Form Auto Fill",
+  "name": "Solutta Zeev Form",
   "version": "1.0",
-  "description": "Auto-fill form fields on Zeev forms",
+  "description": "Auto-fill form fields on Solutta Zeev forms",
   "permissions": [
     "storage",
     "activeTab",
@@ -20,7 +20,6 @@
       "128": "icon128.png"
     }
   },
-  "options_page": "options.html",
   "icons": {
     "16": "icon16.png",
     "48": "icon48.png",

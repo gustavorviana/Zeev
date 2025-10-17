@@ -216,6 +216,32 @@
   <div id="zeevClosedButtons" style="display: none;">
     <button id="newForm" class="fill-btn">Novo</button>
   </div>
+  <!-- Botão de Opções -->
+  <div id="optionsButtonContainer">
+    <button id="optionsBtn" class="config-btn">Opções</button>
+  </div>
+
+  <!-- Seção de Opções -->
+  <div id="optionsSection" class="search-section" style="display: none;">
+    <h4>Configurações</h4>
+
+    <div class="input-group">
+      <label for="monthFormat">Formato de Mês:</label>
+      <input type="text" id="monthFormat" placeholder="Ex: {mes} - {mesNome}/{ano}">
+      <small style="display: block; margin-top: 5px; color: #666; font-size: 11px;">
+        Use {mes} para número (1-12), {mesNome} para nome do mês e {ano} para ano
+      </small>
+    </div>
+
+    <div style="margin: 10px 0; padding: 10px; background-color: #e3f2fd; border-radius: 4px; font-size: 12px;">
+      <strong>Exemplo de resultado:</strong>
+      <div id="monthPreview" style="margin-top: 5px; color: #1976D2;">-</div>
+    </div>
+
+    <button id="saveOptions" class="config-btn">Salvar Configurações</button>
+    <button id="closeOptionsBtn" class="modal-btn modal-btn-cancel" style="width: 100%; margin-top: 5px;">Fechar</button>
+  </div>
+
 
   <input type="file" id="fileInput" accept=".json">
 
