@@ -1,0 +1,358 @@
+/* ========================================
+   Global Styles - Solutta Zeev Form Extension
+   ======================================== */
+
+/* Custom Color Palette */
+:root {
+  --primary-gradient-start: #667eea;
+  --primary-gradient-end: #764ba2;
+  --primary-color: #667eea;
+  --secondary-color: #764ba2;
+}
+
+/* ========================================
+   General Styles
+   ======================================== */
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ========================================
+   Custom Gradient Classes
+   ======================================== */
+
+.bg-gradient-primary {
+  background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+}
+
+.bg-gradient-light {
+  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+}
+
+/* ========================================
+   Custom Buttons
+   ======================================== */
+
+.btn-gradient {
+  background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+  border: none;
+  color: white;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-gradient:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+  color: white;
+}
+
+.btn-gradient:active {
+  transform: translateY(0);
+}
+
+/* ========================================
+   Custom Cards
+   ======================================== */
+
+.card-gradient-header {
+  background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+  color: white;
+}
+
+.preview-card {
+  background: linear-gradient(135deg, #e3f2fd 0%, #f3e5f5 100%);
+  border-left: 4px solid var(--primary-color);
+  padding: 0.50rem 1.25rem;
+  margin-bottom: 20px;
+  border-radius: 8px;
+}
+
+.preview-card .preview-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #555;
+  margin-bottom: 0.5rem;
+}
+
+.preview-card .preview-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+/* ========================================
+   Update Banner - Slim Version
+   ======================================== */
+
+.update-banner {
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  background-color: rgba(255, 255, 255, 0.15);
+  padding: 6px 12px;
+  margin-top: 8px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  animation: slideDown 0.3s ease-out;
+}
+
+.update-banner.show {
+  display: flex;
+}
+
+.update-banner-text {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: white;
+  font-weight: 500;
+}
+
+.update-banner-text i {
+  font-size: 0.9rem;
+}
+
+.update-banner-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: rgba(255, 255, 255, 0.25);
+  color: white;
+  padding: 4px 10px;
+  border-radius: 3px;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.update-banner-link:hover {
+  background-color: rgba(255, 255, 255, 0.35);
+  color: white;
+  transform: scale(1.05);
+}
+
+/* ========================================
+   Section Titles
+   ======================================== */
+
+.section-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 1.5rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.section-title i {
+  color: var(--primary-color);
+}
+
+/* ========================================
+   Form Controls - Custom Focus
+   ======================================== */
+
+.form-control:focus,
+.form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.25rem rgba(102, 126, 234, 0.25);
+}
+
+/* ========================================
+   Modals - Custom Header
+   ======================================== */
+
+.modal-header-gradient {
+  background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+  color: white;
+}
+
+.modal-header-gradient .btn-close {
+  filter: brightness(0) invert(1);
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-in;
+}
+
+/* ========================================
+   Utility Classes
+   ======================================== */
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.border-gradient {
+  border: 2px solid transparent;
+  background: linear-gradient(white, white) padding-box,
+              linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%) border-box;
+}
+
+/* ========================================
+   Popup Specific Styles
+   ======================================== */
+
+body.popup-body-size {
+  width: 450px;
+  max-height: 600px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+.popup-container {
+  width: 100%;
+  max-height: 600px;
+  display: flex;
+  flex-direction: column;
+}
+
+.popup-header {
+  background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+  color: white;
+  padding: 1rem 1.25rem;
+  text-align: center;
+}
+
+.popup-header h5 {
+  margin: 0;
+  font-weight: 600;
+}
+
+.popup-body {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.popup-footer {
+  flex-shrink: 0;
+}
+
+/* ========================================
+   Options Page Specific Styles
+   ======================================== */
+
+.options-container {
+  background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+  min-height: 100vh;
+  padding: 2rem 0;
+}
+
+.options-card {
+  max-width: 900px;
+  margin: 0 auto;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+}
+
+.options-header {
+  background: linear-gradient(135deg, var(--primary-gradient-start) 0%, var(--primary-gradient-end) 100%);
+  color: white;
+  padding: 2.5rem 2rem;
+  text-align: center;
+}
+
+.options-header h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.options-header p {
+  font-size: 1rem;
+  opacity: 0.95;
+  margin-bottom: 0;
+}
+
+.options-footer {
+  background-color: #f8f9fa;
+  color: #6c757d;
+  padding: 1.5rem;
+  text-align: center;
+  font-size: 0.875rem;
+  border-top: 1px solid #e9ecef;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Info Alert - Custom List Style */
+.info-alert ul {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 0;
+}
+
+.info-alert li {
+  padding-left: 1.5rem;
+  position: relative;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.info-alert li:before {
+  content: "→";
+  position: absolute;
+  left: 0;
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+
+@media (max-width: 576px) {
+  .popup-container {
+    width: 100%;
+  }
+
+  .options-container {
+    padding: 1rem 0.5rem;
+  }
+
+  .options-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 1.1rem;
+  }
+}

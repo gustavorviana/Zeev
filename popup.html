@@ -1,382 +1,140 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 
 <head>
   <meta charset="UTF-8">
-  <style>
-    body {
-      width: 450px;
-      min-height: 500px;
-      font-family: Arial, sans-serif;
-      margin: 0;
-    }
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solutta Zeev Form</title>
 
-    main{
-      padding: 15px;
-    }
-
-    button {
-      width: 100%;
-      padding: 10px;
-      margin: 5px 0;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .fill-btn {
-      background-color: #4CAF50;
-      color: white;
-    }
-
-    .fill-btn:hover {
-      background-color: #45a049;
-    }
-
-    .load-btn {
-      background-color: #FF9800;
-      color: white;
-    }
-
-    .load-btn:hover {
-      background-color: #e68900;
-    }
-
-    .config-btn {
-      background-color: #2196F3;
-      color: white;
-    }
-
-    .config-btn:hover {
-      background-color: #0b7dda;
-    }
-
-    .import-btn {
-      background-color: #9C27B0;
-      color: white;
-    }
-
-    .import-btn:hover {
-      background-color: #7B1FA2;
-    }
-
-    .export-btn {
-      background-color: #607D8B;
-      color: white;
-    }
-
-    .export-btn:hover {
-      background-color: #455A64;
-    }
-
-    .export-btn:disabled {
-      background-color: #B0BEC5;
-      cursor: not-allowed;
-      opacity: 0.6;
-    }
-
-    .button-group {
-      display: flex;
-      gap: 5px;
-      margin: 5px 0;
-    }
-
-    .button-group button {
-      flex: 1;
-    }
-
-    input[type="file"] {
-      display: none;
-    }
-
-    .status {
-      margin-top: 10px;
-      padding: 8px;
-      border-radius: 4px;
-      text-align: center;
-      font-size: 12px;
-    }
-
-    .success {
-      background-color: #d4edda;
-      color: #155724;
-    }
-
-    .error {
-      background-color: #f8d7da;
-      color: #721c24;
-    }
-
-    .warning {
-      background-color: #fff3cd;
-      color: #856404;
-    }
-
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 1000;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      background-color: rgba(0, 0, 0, 0.4);
-    }
-
-    .modal-content {
-      background-color: #fefefe;
-      margin: 15% auto;
-      padding: 20px;
-      border: 1px solid #888;
-      border-radius: 8px;
-      width: 80%;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .modal-header {
-      font-size: 16px;
-      font-weight: bold;
-      margin-bottom: 10px;
-      color: #333;
-    }
-
-    .modal-body {
-      font-size: 13px;
-      margin-bottom: 20px;
-      color: #666;
-      line-height: 1.5;
-    }
-
-    .modal-footer {
-      display: flex;
-      gap: 10px;
-      justify-content: flex-end;
-    }
-
-    .modal-btn {
-      padding: 8px 16px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-      font-size: 13px;
-      width: auto;
-    }
-
-    .modal-btn-cancel {
-      background-color: #6c757d;
-      color: white;
-    }
-
-    .modal-btn-cancel:hover {
-      background-color: #5a6268;
-    }
-
-    .modal-btn-confirm {
-      background-color: #FF9800;
-      color: white;
-    }
-
-    .modal-btn-confirm:hover {
-      background-color: #e68900;
-    }
-
-    .search-section {
-      background-color: #f5f5f5;
-      padding: 15px;
-      border-radius: 8px;
-      margin: 10px 0;
-    }
-
-    .search-section h4 {
-      margin-top: 0;
-      margin-bottom: 10px;
-      color: #333;
-    }
-
-    .input-group {
-      margin-bottom: 10px;
-    }
-
-    .input-group label {
-      display: block;
-      margin-bottom: 5px;
-      font-size: 13px;
-      color: #555;
-    }
-
-    .input-group input {
-      width: 100%;
-      padding: 8px;
-      border: 1px solid #ddd;
-      border-radius: 4px;
-      font-size: 14px;
-      box-sizing: border-box;
-    }
-
-    .input-group input:focus {
-      outline: none;
-      border-color: #2196F3;
-    }
-
-    .update-banner {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
-      padding: 10px 15px;
-      border-bottom-left-radius: 6px;
-      border-bottom-right-radius: 6px;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-      display: none;
-      text-align: center;
-    }
-
-    .update-banner.show {
-      display: block;
-    }
-
-    .update-banner-content {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 10px;
-    }
-
-    .update-banner-icon {
-      font-size: 18px;
-    }
-
-    .update-banner-text {
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    .update-banner-link {
-      display: inline-flex;
-      align-items: center;
-      background-color: rgba(255, 255, 255, 0.25);
-      color: white;
-      padding: 5px 12px;
-      border-radius: 4px;
-      text-decoration: none;
-      font-size: 12px;
-      font-weight: 600;
-      transition: all 0.2s;
-      gap: 5px;
-    }
-
-    .update-banner-link:hover {
-      background-color: rgba(255, 255, 255, 0.35);
-      transform: translateY(-1px);
-    }
-
-    .update-banner-version {
-      font-size: 10px;
-      opacity: 0.85;
-      margin-top: 4px;
-    }
-  </style>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
 </head>
 
-<body>
-  <!-- Banner de Atualização -->
-  <div id="updateBanner" class="update-banner">
-    <div class="update-banner-content">
-      <span class="update-banner-icon">🎉</span>
-      <span class="update-banner-text">Nova versão disponível!</span>
-      <a id="updateLink" href="#" target="_blank" class="update-banner-link">
-        <span>Baixar v<span id="remoteVersion">-</span></span>
-        <span>→</span>
-      </a>
+<body class="popup-body-size">
+  <div class="popup-container">
+    <!-- Header -->
+    <div class="popup-header">
+      <h5><i class="bi bi-file-earmark-text"></i> Solutta Zeev Form</h5>
+
+      <!-- Banner de Atualização -->
+      <div id="updateBanner" class="update-banner">
+        <span class="update-banner-text">
+          <i class="bi bi-arrow-up-circle-fill"></i>
+          v<span id="remoteVersion">-</span> disponível
+        </span>
+        <a id="updateLink" href="#" target="_blank" class="update-banner-link">
+          Baixar <i class="bi bi-download"></i>
+        </a>
+      </div>
     </div>
-    <div class="update-banner-version">
-      Versão atual: <strong id="currentVersion">-</strong>
+
+    <!-- Body -->
+    <div class="popup-body p-3">
+      <!-- Seção de Busca de Informações -->
+      <div id="searchSection" class="bg-light border rounded p-3 mb-3" style="display: none;">
+        <h6 class="fw-bold mb-3">
+          <i class="bi bi-search"></i> Buscar
+        </h6>
+
+        <div class="mb-3">
+          <label for="processNumber" class="form-label">Número do Processo:</label>
+          <input type="text" class="form-control" id="processNumber" placeholder="Ex: 123456">
+        </div>
+
+        <div class="mb-3">
+          <label for="verifier" class="form-label">Verificador:</label>
+          <input type="text" class="form-control" id="verifier" placeholder="Ex: ATF65">
+        </div>
+
+        <div class="d-flex flex-row gap-2">
+          <button id="searchInfo" class="btn btn-gradient flex-fill">
+            <i class="bi bi-search"></i> Buscar
+          </button>
+          <button id="closeSearchBtn" class="btn btn-outline-secondary flex-fill">
+            <i class="bi bi-x-lg"></i> Fechar
+          </button>
+        </div>
+      </div>
+
+      <!-- Seção de Formulário -->
+      <div id="zeevOpenSection" style="display: none;">
+        <div class="text-muted small mb-2">
+          <i class="bi bi-file-earmark-text"></i> Formulário
+        </div>
+        <div id="zeevOpenButtons" class="d-flex flex-row gap-2 mb-3">
+          <button id="fillForm" class="btn btn-success flex-fill"
+            title="Preencher o formulário com os dados salvos nas configurações">
+            <i class="bi bi-pencil-square"></i> Preencher
+          </button>
+          <button id="loadFromPage" class="btn btn-primary flex-fill"
+            title="Ler os dados do formulário e salvar nas configurações">
+            <i class="bi bi-download"></i> Ler
+          </button>
+        </div>
+      </div>
+
+      <!-- Seção de Ações -->
+      <div id="zeevClosedSection" style="display: none;">
+        <div class="text-muted small mb-2">
+          <i class="bi bi-file-earmark-plus"></i> Ações
+        </div>
+        <div id="zeevClosedButtons" class="d-flex flex-row gap-2 mb-3">
+          <button id="toggleSearchBtn2" class="btn btn-gradient flex-fill">
+            <i class="bi bi-search"></i> Buscar
+          </button>
+          <button id="newForm" class="btn btn-success flex-fill">
+            <i class="bi bi-plus-circle"></i> Novo
+          </button>
+        </div>
+      </div>
+
+      <!-- Status message -->
+      <div id="status" class="d-none mt-3"></div>
+    </div>
+
+    <!-- Footer -->
+    <div class="popup-footer bg-light border-top text-center text-muted p-2 small">
+      <i class="bi bi-shield-check"></i> v<span id="footerVersion">-</span>
+      <span class="mx-2">•</span>
+      <a href="#" id="optionsLink" class="text-decoration-none">
+        <i class="bi bi-gear"></i> Opções
+      </a>
     </div>
   </div>
 
-  <!-- Botão para mostrar seção de busca -->
-  <main>
-    <div id="toggleSearchContainer" style="display: none;">
-      <button id="toggleSearchBtn" class="config-btn">Buscar Informações</button>
-    </div>
-
-    <!-- Seção de Busca de Informações -->
-    <div id="searchSection" class="search-section" style="display: none;">
-      <h4>Buscar Informações</h4>
-      <div class="input-group">
-        <label for="processNumber">Número do Processo:</label>
-        <input type="text" id="processNumber" placeholder="Ex: 123456">
-      </div>
-      <div class="input-group">
-        <label for="verifier">Verificador:</label>
-        <input type="text" id="verifier" placeholder="Ex: ATF65">
-      </div>
-      <button id="searchInfo" class="config-btn">Buscar Info</button>
-      <button id="closeSearchBtn" class="modal-btn modal-btn-cancel"
-        style="width: 100%; margin-top: 5px;">Fechar</button>
-    </div>
-
-    <div id="zeevOpenButtons" style="display: none;">
-      <button id="fillForm" class="fill-btn">Preencher Formulário</button>
-      <button id="loadFromPage" class="load-btn">Carregar da Página</button>
-
-      <div class="button-group">
-        <button id="importConfig" class="import-btn">Importar JSON</button>
-        <button id="exportConfig" class="export-btn" disabled>Exportar JSON</button>
-      </div>
-    </div>
-
-    <div id="zeevClosedButtons" style="display: none;">
-      <button id="newForm" class="fill-btn">Novo</button>
-    </div>
-    <!-- Botão de Opções -->
-    <div id="optionsButtonContainer">
-      <button id="optionsBtn" class="config-btn">Opções</button>
-    </div>
-
-    <!-- Seção de Opções -->
-    <div id="optionsSection" class="search-section" style="display: none;">
-      <h4>Configurações</h4>
-
-      <div class="input-group">
-        <label for="monthFormat">Formato de Mês:</label>
-        <input type="text" id="monthFormat" placeholder="Ex: {mes} - {mesNome}/{ano}">
-        <small style="display: block; margin-top: 5px; color: #666; font-size: 11px;">
-          Use {mes} para número (1-12), {mesNome} para nome do mês e {ano} para ano
-        </small>
-      </div>
-
-      <div style="margin: 10px 0; padding: 10px; background-color: #e3f2fd; border-radius: 4px; font-size: 12px;">
-        <strong>Exemplo de resultado:</strong>
-        <div id="monthPreview" style="margin-top: 5px; color: #1976D2;">-</div>
-      </div>
-
-      <button id="saveOptions" class="config-btn">Salvar Configurações</button>
-      <button id="checkUpdateBtn" class="config-btn" style="margin-top: 5px;">Buscar Atualizações</button>
-      <button id="closeOptionsBtn" class="modal-btn modal-btn-cancel"
-        style="width: 100%; margin-top: 5px;">Fechar</button>
-    </div>
-
-
-    <input type="file" id="fileInput" accept=".json">
-
-    <div id="status"></div>
-
-    <!-- Modal de confirmação -->
-    <div id="confirmModal" class="modal">
+  <!-- Modal de confirmação -->
+  <div class="modal fade" id="confirmModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
       <div class="modal-content">
-        <div class="modal-header">Confirmar Carregamento</div>
-        <div class="modal-body">
+        <div class="modal-header modal-header-gradient">
+          <h5 class="modal-title">
+            <i class="bi bi-exclamation-triangle"></i> Confirmar Carregamento
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="modalBody">
           Tem certeza que deseja carregar os dados do formulário?<br>
           <strong>Os dados salvos anteriormente serão substituídos.</strong>
         </div>
         <div class="modal-footer">
-          <button id="modalCancel" class="modal-btn modal-btn-cancel">Cancelar</button>
-          <button id="modalConfirm" class="modal-btn modal-btn-confirm">Confirmar</button>
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" id="modalCancel">
+            <i class="bi bi-x-lg"></i> Cancelar
+          </button>
+          <button type="button" class="btn btn-warning text-white" id="modalConfirm">
+            <i class="bi bi-check-lg"></i> Confirmar
+          </button>
         </div>
       </div>
     </div>
-  </main>
+  </div>
 
+  <!-- Bootstrap JS -->
+  <script src="bootstrap.bundle.min.js"></script>
+  <script src="version-manager.js"></script>
   <script src="update-checker.js"></script>
   <script src="popup.js"></script>
 </body>

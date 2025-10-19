@@ -40,6 +40,37 @@ Extensão para Chrome que facilita o preenchimento automático de formulários d
    - Clique no ícone de quebra-cabeça (extensões) na barra de ferramentas
    - Encontre "Zeev Form Auto Fill" e clique no ícone de alfinete para fixá-la na barra
 
+## Como Atualizar a Extensão
+
+A extensão possui um **sistema de verificação automática de atualizações** que exibe um banner quando uma nova versão está disponível no GitHub.
+
+1. **Notificação de Atualização**
+   - Ao abrir a extensão, se houver uma nova versão disponível, você verá um banner no topo com a mensagem:
+   - `[ícone] v{versão} disponível -------- [Baixar]`
+
+2. **Baixar a Nova Versão**
+   - Clique no botão **"Baixar"** no banner
+   - Você será redirecionado para o repositório do GitHub
+   - Faça o download da nova versão ou faça um `git pull` se você clonou o repositório
+
+3. **Atualizar no Navegador**
+   - Vá para `chrome://extensions/` (ou `edge://extensions/` ou `brave://extensions/`)
+   - Certifique-se de que o **Modo de desenvolvedor** está ativado
+   - Localize a extensão **Solutta Zeev Form**
+   - Clique no botão **🔄 "Atualizar"** (ícone de atualização circular)
+   - O Chrome irá recarregar a extensão com os novos arquivos
+   - ✅ Pronto! A extensão está atualizada
+
+### Notas Importantes
+
+⚠️ **Não desinstale a extensão para atualizar!** Isso fará você perder todas as configurações salvas.
+
+✅ **Mantenha a pasta no mesmo local**: O Chrome referencia a extensão pela localização da pasta. Se você mover a pasta, precisará carregá-la novamente.
+
+✅ **Use Git para facilitar**: Se você clonou o repositório com Git, basta executar `git pull` na pasta e depois clicar em "Atualizar" no Chrome.
+
+✅ **Suas configurações são preservadas**: As configurações e dados salvos ficam armazenados no navegador, não nos arquivos da extensão, então atualizar não afeta seus dados.
+
 ## Estrutura de Arquivos Necessários
 
 Certifique-se de que a pasta da extensão contém os seguintes arquivos:

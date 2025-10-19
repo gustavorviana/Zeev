@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Opções - Solutta Zeev Form</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+  <!-- Custom Styles -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body class="options-container">
+  <div class="options-card card">
+    <!-- Header -->
+    <div class="options-header">
+      <h1><i class="bi bi-gear-fill"></i> Configurações</h1>
+      <p>Personalize o comportamento da extensão Solutta Zeev Form</p>
+    </div>
+
+    <!-- Content -->
+    <div class="card-body p-4 p-md-5">
+      <!-- Tabs Navigation -->
+      <ul class="nav nav-tabs mb-4" id="optionsTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+          <button class="nav-link active" id="format-tab" data-bs-toggle="tab" data-bs-target="#format-panel"
+            type="button" role="tab" aria-controls="format-panel" aria-selected="true">
+            <i class="bi bi-calendar-event"></i> Formato de Data
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="data-tab" data-bs-toggle="tab" data-bs-target="#data-panel" type="button"
+            role="tab" aria-controls="data-panel" aria-selected="false">
+            <i class="bi bi-database"></i> Dados e Configurações
+          </button>
+        </li>
+        <li class="nav-item" role="presentation">
+          <button class="nav-link" id="updates-tab" data-bs-toggle="tab" data-bs-target="#updates-panel" type="button"
+            role="tab" aria-controls="updates-panel" aria-selected="false">
+            <i class="bi bi-arrow-repeat"></i> Atualizações
+          </button>
+        </li>
+      </ul>
+
+      <!-- Tabs Content -->
+      <div class="tab-content" id="optionsTabsContent">
+        <!-- Aba: Formato de Data -->
+        <div class="tab-pane fade show active" id="format-panel" role="tabpanel" aria-labelledby="format-tab">
+          <div class="mb-4">
+            <div class="mb-3">
+              <label for="monthFormat" class="form-label">Formato de Mês:</label>
+              <input type="text" class="form-control form-control-lg" id="monthFormat"
+                placeholder="Ex: {mes} - {mesNome}/{ano}">
+              <div class="form-text">
+                Use <strong>{mes}</strong> para número (1-12),
+                <strong>{mesNome}</strong> para nome do mês completo e
+                <strong>{ano}</strong> para ano
+              </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="preview-card">
+              <div class="preview-label">
+                <i class="bi bi-eye"></i> Visualização do resultado:
+              </div>
+              <div class="preview-value" id="monthPreview">-</div>
+            </div>
+
+            <!-- Exemplos -->
+            <div class="info-card">
+              <h6>
+                <i class="bi bi-lightbulb"></i>
+                Exemplos de formatos:
+              </h6>
+              <ul class="info-alert">
+                <li><code>{mes} - {mesNome}/{ano}</code> <strong>→</strong> 10 - Outubro/2025</li>
+                <li><code>{mesNome}/{ano}</code> <strong>→</strong> Outubro/2025</li>
+                <li><code>{mes}/{ano}</code> <strong>→</strong> 10/2025</li>
+                <li><code>{ano}-{mes}</code> <strong>→</strong> 2025-10</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Botões de ação -->
+          <div class="d-grid gap-3 d-md-flex justify-content-md-end mt-4">
+            <button id="resetOptions" class="btn btn-outline-secondary">
+              <i class="bi bi-arrow-counterclockwise"></i>
+              Restaurar Padrão
+            </button>
+            <button id="saveOptions" class="btn btn-gradient">
+              <i class="bi bi-check-circle"></i>
+              Salvar Configurações
+            </button>
+          </div>
+        </div>
+
+        <!-- Aba: Dados e Configurações -->
+        <div class="tab-pane fade" id="data-panel" role="tabpanel" aria-labelledby="data-tab">
+          <div class="mb-4">
+            <p class="text-muted mb-4">
+              Gerencie suas configurações exportando ou importando dados salvos do formulário.
+            </p>
+
+            <!-- Seção de Importar -->
+            <div class="data-section mb-4">
+              <h5 class="mb-3">
+                <i class="bi bi-upload"></i> Importar Configurações
+              </h5>
+              <p class="text-muted small mb-3">
+                Carregue um arquivo JSON com as configurações salvas anteriormente.
+              </p>
+              <button id="importConfig" class="btn btn-primary">
+                <i class="bi bi-upload"></i> Importar Arquivo
+              </button>
+            </div>
+
+            <!-- Seção de Exportar -->
+            <div class="data-section">
+              <h5 class="mb-3">
+                <i class="bi bi-download"></i> Exportar Configurações
+              </h5>
+              <p class="text-muted small mb-3">
+                Baixe suas configurações atuais em formato JSON.
+              </p>
+              <button id="exportConfig" class="btn btn-secondary">
+                <i class="bi bi-download"></i> Exportar Arquivo
+              </button>
+              <div id="exportStatus" class="mt-2 small text-muted"></div>
+            </div>
+
+            <!-- Input file oculto -->
+            <input type="file" id="fileInput" accept=".json" style="display: none;">
+          </div>
+        </div>
+
+        <!-- Aba: Atualizações -->
+        <div class="tab-pane fade" id="updates-panel" role="tabpanel" aria-labelledby="updates-tab">
+          <div class="mb-4">
+            <p class="text-muted mb-4">
+              Verifique se há novas versões da extensão Solutta Zeev Form disponíveis.
+            </p>
+
+            <!-- Seção de Verificação de Atualizações -->
+            <div class="data-section mb-4">
+              <h5 class="mb-3">
+                <i class="bi bi-arrow-repeat"></i> Verificar Atualizações
+              </h5>
+              <p class="text-muted small mb-3">
+                Clique no botão abaixo para verificar se há uma nova versão disponível.
+              </p>
+              <button id="checkUpdateBtn" class="btn btn-primary">
+                <i class="bi bi-arrow-repeat"></i> Buscar Atualizações
+              </button>
+              <div id="updateStatus" class="mt-3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-light border-top text-center text-muted p-2 small">
+      <i class="bi bi-shield-check"></i> Solutta Zeev Form Extension v<span id="footerVersion">-</span>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-container">
+    <div id="successToast" class="toast align-items-center text-bg-success border-0" role="alert" aria-live="assertive"
+      aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi bi-check-circle-fill"></i>
+          <span id="successMessage"></span>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+          aria-label="Close"></button>
+      </div>
+    </div>
+
+    <div id="errorToast" class="toast align-items-center text-bg-danger border-0" role="alert" aria-live="assertive"
+      aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi bi-exclamation-triangle-fill"></i>
+          <span id="errorMessage"></span>
+        </div>
+        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+          aria-label="Close"></button>
+      </div>
+    </div>
+
+    <div id="warningToast" class="toast align-items-center text-bg-warning border-0" role="alert" aria-live="assertive"
+      aria-atomic="true">
+      <div class="d-flex">
+        <div class="toast-body">
+          <i class="bi bi-exclamation-circle-fill"></i>
+          <span id="warningMessage"></span>
+        </div>
+        <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS -->
+  <script src="bootstrap.bundle.min.js"></script>
+  <script src="update-checker.js"></script>
+  <script src="components/tabs.js"></script>
+  <script src="options.js"></script>
+  <script src="version-manager.js"></script>
+</body>
+
+</html>

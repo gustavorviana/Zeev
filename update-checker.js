@@ -5,7 +5,7 @@ class UpdateChecker {
     this.githubBranch = 'master';
     this.manifestUrl = `https://raw.githubusercontent.com/${this.githubRepo}/${this.githubBranch}/manifest.json`;
     this.repoUrl = `https://github.com/${this.githubRepo}`;
-    this.checkIntervalMinutes = 30; // Verificar atualizações a cada 30 minutos
+    this.checkIntervalMinutes = 60; // Verificar atualizações a cada 1 hora
   }
 
   /**
@@ -17,25 +17,17 @@ class UpdateChecker {
    * compareVersions("1.0", "1.1") => -1 (atualização disponível)
    * compareVersions("1.0", "1.0") => 0 (mesma versão)
    * compareVersions("1.1", "1.0") => 1 (versão local mais nova)
-   */
-  compareVersions(version1, version2) {
-    // Converter para string e remover espaços
-    const v1Str = String(version1).trim();
-    const v2Str = String(version2).trim();
-
-    const v1Parts = v1Str.split('.').map(Number);
-    const v2Parts = v2Str.split('.').map(Number);
-
+   */compareVersions(version1, version2) {
+    const v1Parts = String(version1).trim().split('.').map(Number);
+    const v2Parts = String(version2).trim().split('.').map(Number);
     const maxLength = Math.max(v1Parts.length, v2Parts.length);
 
     for (let i = 0; i < maxLength; i++) {
       const v1 = v1Parts[i] || 0;
       const v2 = v2Parts[i] || 0;
-
       if (v1 < v2) return -1;
       if (v1 > v2) return 1;
     }
-
     return 0;
   }
 
@@ -43,7 +35,7 @@ class UpdateChecker {
    * Obtém a versão atual da extensão do manifest
    * @returns {Promise<string>} Versão atual
    */
-  async getCurrentVersion() {
+  getCurrentVersion() {
     const manifestData = chrome.runtime.getManifest();
     return manifestData.version;
   }
@@ -56,11 +48,8 @@ class UpdateChecker {
     try {
       const response = await fetch(this.manifestUrl, {
         cache: 'no-cache',
-        headers: {
-          'Accept': 'application/json'
-        }
+        headers: { 'Accept': 'application/json' }
       });
-
       if (!response.ok) {
         console.error('Erro ao buscar manifest remoto:', response.status);
         return null;
@@ -80,22 +69,18 @@ class UpdateChecker {
    */
   async checkForUpdates() {
     try {
-      const currentVersion = await this.getCurrentVersion();
+      const currentVersion = this.getCurrentVersion();
       const remoteVersion = await this.getRemoteVersion();
 
       if (!remoteVersion) {
         return {
-          hasUpdate: false,
           currentVersion,
           remoteVersion: null,
           error: 'Não foi possível verificar atualizações'
         };
       }
 
-      const comparison = this.compareVersions(currentVersion, remoteVersion);
-
       return {
-        hasUpdate: comparison < 0,
         currentVersion,
         remoteVersion,
         repoUrl: this.repoUrl
@@ -103,8 +88,7 @@ class UpdateChecker {
     } catch (error) {
       console.error('Erro na verificação de atualizações:', error);
       return {
-        hasUpdate: false,
-        currentVersion: await this.getCurrentVersion(),
+        currentVersion: this.getCurrentVersion(),
         remoteVersion: null,
         error: error.message
       };
@@ -120,26 +104,16 @@ class UpdateChecker {
     const lastCheck = result.lastUpdateCheck || 0;
     const now = Date.now();
     const intervalMs = this.checkIntervalMinutes * 60 * 1000;
-
     return (now - lastCheck) > intervalMs;
   }
 
   /**
    * Salva a data/hora da última verificação
    */
-  async saveLastCheck() {
+  async saveCheckInfo(remoteVersion) {
     await chrome.storage.local.set({
-      lastUpdateCheck: Date.now()
-    });
-  }
-
-  /**
-   * Salva informações sobre a atualização disponível
-   * @param {Object} updateInfo - Informações da atualização
-   */
-  async saveUpdateInfo(updateInfo) {
-    await chrome.storage.local.set({
-      updateAvailable: updateInfo
+      lastUpdateCheck: Date.now(),
+      lastRemoteVersion: remoteVersion
     });
   }
 
@@ -147,50 +121,44 @@ class UpdateChecker {
    * Obtém informações sobre atualização salva
    * @returns {Promise<Object|null>} Informações da atualização ou null
    */
-  async getUpdateInfo() {
-    const result = await chrome.storage.local.get(['updateAvailable']);
-    return result.updateAvailable || null;
+  async getLastCheckInfo() {
+    const result = await chrome.storage.local.get(['lastUpdateCheck', 'lastRemoteVersion']);
+    return {
+      lastCheck: result.lastUpdateCheck || null,
+      lastRemoteVersion: result.lastRemoteVersion || null
+    };
   }
 
   /**
-   * Limpa informações de atualização salvas
-   */
-  async clearUpdateInfo() {
-    await chrome.storage.local.remove(['updateAvailable']);
-  }
-
-  /**
-   * Verifica atualizações e salva o resultado
-   * @param {boolean} force - Força a verificação mesmo que não tenha passado o intervalo
-   * @returns {Promise<Object>} Resultado da verificação
-   */
+    * Verifica atualizações e salva o resultado
+    * @param {boolean} force - Força a verificação mesmo que não tenha passado o intervalo
+    * @returns {Promise<Object>} Resultado da verificação
+    */
   async checkAndSave(force = false) {
-    // Se não for forçado e ainda está no cache, retorna a última informação
     if (!force && !(await this.shouldCheck())) {
-      const cachedInfo = await this.getUpdateInfo();
-      if (cachedInfo) {
-        return cachedInfo;
-      }
+      return await this.getResultBody();
     }
 
-    // Realiza nova verificação
     const updateInfo = await this.checkForUpdates();
-
-    // Salva timestamp da verificação
-    await this.saveLastCheck();
-
-    // Salva ou limpa informação de atualização
-    if (updateInfo.hasUpdate) {
-      await this.saveUpdateInfo(updateInfo);
-    } else {
-      await this.clearUpdateInfo();
-    }
-
+    await this.saveCheckInfo(updateInfo.remoteVersion);
     return updateInfo;
+  }
+
+  async getResultBody() {
+    const info = await this.getLastCheckInfo();
+    const currentVersion = this.getCurrentVersion();
+    const comparison = this.compareVersions(currentVersion, info.lastRemoteVersion);
+    info.remoteVersion = info.lastRemoteVersion;
+    delete info.lastRemoteVersion;
+
+    return {
+      hasUpdate: comparison < 0,
+      cached: true,
+      ...info
+    };
   }
 }
 
-// Exportar para uso em outros arquivos
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = UpdateChecker;
 }

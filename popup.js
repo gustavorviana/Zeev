@@ -1,16 +1,20 @@
 // Instância global do update checker
 let updateCheckerInstance = null;
 
+// URLs do Zeev
+const ZEEV_URLS = {
+  FORM_URL: 'https://solutta.zeev.it/1.0/anonymous?c=rPhXBidDIyatU65md%2BGPxwJcU1fSGyD4jw0MW9a1mdjN28skW%2FA%2FoH4PaWn9sFSoLBiVDrLWE4XAmWoOoWisprSECTjPmB0lYm8MHGLU%2BC4%3D',
+  BASE_DOMAIN: 'solutta.zeev.it'
+};
+
 // Função para atualizar o banner de atualização
-function updateBanner(updateInfo) {
+function showUpdateBanner(updateInfo) {
   const updateBanner = document.getElementById('updateBanner');
-  const currentVersionEl = document.getElementById('currentVersion');
   const remoteVersionEl = document.getElementById('remoteVersion');
   const updateLink = document.getElementById('updateLink');
 
   if (updateInfo && updateInfo.hasUpdate) {
     // Mostrar banner de atualização (permanente)
-    currentVersionEl.textContent = updateInfo.currentVersion;
     remoteVersionEl.textContent = updateInfo.remoteVersion;
     updateLink.href = updateInfo.repoUrl;
     updateBanner.classList.add('show');
@@ -25,7 +29,7 @@ function updateBanner(updateInfo) {
   try {
     updateCheckerInstance = new UpdateChecker();
     const updateInfo = await updateCheckerInstance.checkAndSave(false);
-    updateBanner(updateInfo);
+    showUpdateBanner(updateInfo);
   } catch (error) {
     console.error('Erro ao verificar atualizações:', error);
   }
@@ -35,15 +39,19 @@ function updateBanner(updateInfo) {
 (async () => {
   try {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-    const zeevOpenButtons = document.getElementById('zeevOpenButtons');
-    const zeevClosedButtons = document.getElementById('zeevClosedButtons');
-    const toggleSearchContainer = document.getElementById('toggleSearchContainer');
+    const zeevOpenSection = document.getElementById('zeevOpenSection');
+    const zeevClosedSection = document.getElementById('zeevClosedSection');
     const searchSection = document.getElementById('searchSection');
     const fillFormBtn = document.getElementById('fillForm');
     const loadFromPageBtn = document.getElementById('loadFromPage');
 
-    // Verificar se a aba atual é do Zeev
-    if (tab.url && tab.url.includes('solutta.zeev.it')) {
+    // Verificar se a aba atual é do formulário Zeev (URL específica ou contém o domínio base)
+    const isZeevFormPage = tab.url && (
+      tab.url.startsWith(ZEEV_URLS.FORM_URL) ||
+      (tab.url.includes(ZEEV_URLS.BASE_DOMAIN) && tab.url.includes('/workflow/'))
+    );
+
+    if (isZeevFormPage) {
       // Está no Zeev, verificar se é tela de leitura
       try {
         const results = await chrome.scripting.executeScript({
@@ -55,34 +63,35 @@ function updateBanner(updateInfo) {
 
         if (isReadOnly) {
           // É tela de leitura (Detalhamento #), mostrar apenas "Carregar da Página"
-          zeevOpenButtons.style.display = 'block';
+          zeevOpenSection.style.display = 'block';
           fillFormBtn.style.display = 'none';
           loadFromPageBtn.style.display = 'block';
         } else {
           // É tela de formulário editável, mostrar todos os botões
-          zeevOpenButtons.style.display = 'block';
+          zeevOpenSection.style.display = 'block';
           fillFormBtn.style.display = 'block';
           loadFromPageBtn.style.display = 'block';
         }
 
-        zeevClosedButtons.style.display = 'none';
-        toggleSearchContainer.style.display = 'block';
+        zeevClosedSection.style.display = 'none';
         searchSection.style.display = 'none';
 
       } catch (checkError) {
         console.log('Erro ao verificar tipo de página:', checkError);
         // Em caso de erro, mostrar todos os botões
-        zeevOpenButtons.style.display = 'block';
-        zeevClosedButtons.style.display = 'none';
-        toggleSearchContainer.style.display = 'block';
+        zeevOpenSection.style.display = 'block';
+        fillFormBtn.style.display = 'block';
+        loadFromPageBtn.style.display = 'block';
+        zeevClosedSection.style.display = 'none';
         searchSection.style.display = 'none';
       }
     } else {
-      // Não está no Zeev, mostrar botão "Novo" e a seção de busca
-      zeevOpenButtons.style.display = 'none';
-      zeevClosedButtons.style.display = 'block';
-      toggleSearchContainer.style.display = 'none';
-      searchSection.style.display = 'block';
+      // Não está no Zeev, mostrar botões "Buscar" e "Novo"
+      zeevOpenSection.style.display = 'none';
+      fillFormBtn.style.display = 'none';
+      loadFromPageBtn.style.display = 'none';
+      zeevClosedSection.style.display = 'block';
+      searchSection.style.display = 'none';
 
       // Tentar extrair informações da página automaticamente
       try {
@@ -98,14 +107,25 @@ function updateBanner(updateInfo) {
           document.getElementById('processNumber').value = extractedInfo.processNumber;
           document.getElementById('verifier').value = extractedInfo.verifier;
 
+          // Mostrar a seção de busca já que as informações foram encontradas
+          searchSection.style.display = 'block';
+
+          // Ocultar o botão "Buscar" e expandir "Novo"
+          const toggleSearchBtn = document.getElementById('toggleSearchBtn2');
+          const newFormBtn = document.getElementById('newForm');
+          toggleSearchBtn.style.display = 'none';
+          newFormBtn.classList.remove('flex-fill');
+          zeevClosedButtons.classList.remove('d-flex', 'flex-row');
+          zeevClosedButtons.classList.add('d-grid');
+
           // Mostrar feedback visual
           const statusDiv = document.getElementById('status');
-          statusDiv.className = 'status success';
+          statusDiv.className = 'status-message alert alert-success show';
           statusDiv.textContent = 'Informações detectadas automaticamente!';
 
           setTimeout(() => {
             statusDiv.textContent = '';
-            statusDiv.className = 'status';
+            statusDiv.className = 'status-message';
           }, 3000);
         }
       } catch (extractError) {
@@ -117,206 +137,74 @@ function updateBanner(updateInfo) {
   }
 })();
 
-// Verificar se há dados salvos e habilitar botão de exportar
-(async () => {
-  try {
-    const data = await chrome.storage.sync.get('formData');
-    const exportBtn = document.getElementById('exportConfig');
 
-    if (data.formData && Object.keys(data.formData).length > 0) {
-      exportBtn.disabled = false;
-    }
-  } catch (error) {
-    console.error('Erro ao verificar dados salvos:', error);
-  }
-})();
 
-// Carregar configurações salvas ao abrir o popup
-(async () => {
-  try {
-    const data = await chrome.storage.sync.get('monthFormat');
-    const monthFormatInput = document.getElementById('monthFormat');
-
-    if (data.monthFormat) {
-      monthFormatInput.value = data.monthFormat;
-      updateMonthPreview();
-    } else {
-      // Valor padrão
-      monthFormatInput.value = '{mes} - {mesNome}/{ano}';
-      updateMonthPreview();
-    }
-  } catch (error) {
-    console.error('Erro ao carregar configurações:', error);
-  }
-})();
-
-// Função para obter nome do mês em português
-function getMonthName(monthNumber) {
-  const months = [
-    'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
-    'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'
-  ];
-  return months[monthNumber - 1] || '';
-}
-
-// Função para formatar o mês de acordo com o template
-function formatMonth(template) {
-  const now = new Date();
-  const monthNumber = now.getMonth() + 1;
-  const monthName = getMonthName(monthNumber);
-  const year = now.getFullYear();
-
-  return template
-    .replace(/{mes}/g, monthNumber)
-    .replace(/{mesNome}/g, monthName)
-    .replace(/{ano}/g, year);
-}
-
-// Função para atualizar o preview do formato
-function updateMonthPreview() {
-  const monthFormatInput = document.getElementById('monthFormat');
-  const preview = document.getElementById('monthPreview');
-
-  if (monthFormatInput.value.trim()) {
-    preview.textContent = formatMonth(monthFormatInput.value);
-  } else {
-    preview.textContent = '-';
-  }
-}
-
-// Atualizar preview quando o usuário digitar
-document.getElementById('monthFormat').addEventListener('input', updateMonthPreview);
-
-// Botão para buscar atualizações manualmente
-document.getElementById('checkUpdateBtn').addEventListener('click', async () => {
-  const statusDiv = document.getElementById('status');
-  const checkUpdateBtn = document.getElementById('checkUpdateBtn');
-
-  try {
-    // Desabilitar botão e mostrar status de carregamento
-    checkUpdateBtn.disabled = true;
-    checkUpdateBtn.textContent = 'Verificando...';
-    statusDiv.className = 'status';
-    statusDiv.textContent = 'Verificando atualizações...';
-
-    // Forçar verificação de atualizações
-    if (!updateCheckerInstance) {
-      updateCheckerInstance = new UpdateChecker();
-    }
-
-    const updateInfo = await updateCheckerInstance.checkAndSave(true);
-
-    // Atualizar banner
-    updateBanner(updateInfo);
-
-    // Mostrar resultado
-    if (updateInfo.hasUpdate) {
-      statusDiv.className = 'status success';
-      statusDiv.textContent = `Nova versão ${updateInfo.remoteVersion} disponível!`;
-    } else if (updateInfo.error) {
-      statusDiv.className = 'status error';
-      statusDiv.textContent = `Erro: ${updateInfo.error}`;
-    } else {
-      statusDiv.className = 'status success';
-      statusDiv.textContent = 'Você está usando a versão mais recente!';
-    }
-
-    setTimeout(() => {
-      statusDiv.textContent = '';
-      statusDiv.className = 'status';
-    }, 4000);
-
-  } catch (error) {
-    statusDiv.className = 'status error';
-    statusDiv.textContent = 'Erro ao verificar: ' + error.message;
-    setTimeout(() => {
-      statusDiv.textContent = '';
-      statusDiv.className = 'status';
-    }, 3000);
-  } finally {
-    // Re-habilitar botão
-    checkUpdateBtn.disabled = false;
-    checkUpdateBtn.textContent = 'Buscar Atualizações';
-  }
+// Link para abrir a página de opções
+document.getElementById('optionsLink').addEventListener('click', (e) => {
+  e.preventDefault();
+  chrome.runtime.openOptionsPage();
 });
 
-// Botão para mostrar/ocultar opções
-document.getElementById('optionsBtn').addEventListener('click', () => {
-  const optionsSection = document.getElementById('optionsSection');
-  const optionsButtonContainer = document.getElementById('optionsButtonContainer');
 
-  optionsButtonContainer.style.display = 'none';
-  optionsSection.style.display = 'block';
-});
-
-// Botão para fechar opções
-document.getElementById('closeOptionsBtn').addEventListener('click', () => {
-  const optionsSection = document.getElementById('optionsSection');
-  const optionsButtonContainer = document.getElementById('optionsButtonContainer');
-
-  optionsSection.style.display = 'none';
-  optionsButtonContainer.style.display = 'block';
-});
-
-// Botão para salvar configurações
-document.getElementById('saveOptions').addEventListener('click', async () => {
-  const statusDiv = document.getElementById('status');
-  const monthFormatInput = document.getElementById('monthFormat');
-
-  try {
-    const monthFormat = monthFormatInput.value.trim();
-
-    if (!monthFormat) {
-      statusDiv.className = 'status warning';
-      statusDiv.textContent = 'Por favor, preencha o formato de mês!';
-      setTimeout(() => {
-        statusDiv.textContent = '';
-        statusDiv.className = 'status';
-      }, 3000);
-      return;
-    }
-
-    // Salvar configuração
-    await chrome.storage.sync.set({ monthFormat: monthFormat });
-
-    statusDiv.className = 'status success';
-    statusDiv.textContent = 'Configurações salvas com sucesso!';
-
-    setTimeout(() => {
-      statusDiv.textContent = '';
-      statusDiv.className = 'status';
-
-      // Fechar seção de opções
-      document.getElementById('optionsSection').style.display = 'none';
-      document.getElementById('optionsButtonContainer').style.display = 'block';
-    }, 2000);
-
-  } catch (error) {
-    statusDiv.className = 'status error';
-    statusDiv.textContent = 'Erro ao salvar: ' + error.message;
-    setTimeout(() => {
-      statusDiv.textContent = '';
-      statusDiv.className = 'status';
-    }, 3000);
-  }
-});
-
-// Botão para mostrar a seção de busca
-document.getElementById('toggleSearchBtn').addEventListener('click', () => {
-  const toggleSearchContainer = document.getElementById('toggleSearchContainer');
+// Botão para mostrar a seção de busca (quando não está no Zeev)
+document.getElementById('toggleSearchBtn2').addEventListener('click', async () => {
   const searchSection = document.getElementById('searchSection');
+  const toggleSearchBtn = document.getElementById('toggleSearchBtn2');
+  const newFormBtn = document.getElementById('newForm');
 
-  toggleSearchContainer.style.display = 'none';
+  // Mostrar a seção de busca
   searchSection.style.display = 'block';
+  // Ocultar apenas o botão "Buscar"
+  toggleSearchBtn.style.display = 'none';
+  // Fazer o botão "Novo" ocupar toda a largura
+  newFormBtn.classList.remove('flex-fill');
+  newFormBtn.parentElement.classList.remove('d-flex', 'flex-row');
+  newFormBtn.parentElement.classList.add('d-grid');
+
+    // Tentar extrair informações da página automaticamente
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        function: extractProcessInfoFromPage
+      });
+
+      const extractedInfo = results[0].result;
+
+      if (extractedInfo && extractedInfo.processNumber && extractedInfo.verifier) {
+        // Preencher os campos automaticamente
+        document.getElementById('processNumber').value = extractedInfo.processNumber;
+        document.getElementById('verifier').value = extractedInfo.verifier;
+
+        // Mostrar feedback visual
+        const statusDiv = document.getElementById('status');
+        statusDiv.className = 'status-message alert alert-success show';
+        statusDiv.textContent = 'Informações detectadas automaticamente!';
+
+        setTimeout(() => {
+          statusDiv.textContent = '';
+          statusDiv.className = 'status-message';
+        }, 3000);
+      }
+    } catch (extractError) {
+      console.log('Não foi possível extrair informações da página:', extractError);
+    }
 });
 
 // Botão para fechar a seção de busca
-document.getElementById('closeSearchBtn').addEventListener('click', () => {
-  const toggleSearchContainer = document.getElementById('toggleSearchContainer');
+document.getElementById('closeSearchBtn').addEventListener('click', async () => {
   const searchSection = document.getElementById('searchSection');
+  const toggleSearchBtn = document.getElementById('toggleSearchBtn2');
+  const newFormBtn = document.getElementById('newForm');
+  const zeevClosedButtons = document.getElementById('zeevClosedButtons');
 
   searchSection.style.display = 'none';
-  toggleSearchContainer.style.display = 'block';
+
+  // Restaurar os botões "Buscar" e "Novo" lado a lado
+  toggleSearchBtn.style.display = 'block';
+  newFormBtn.classList.add('flex-fill');
+  zeevClosedButtons.classList.remove('d-grid');
+  zeevClosedButtons.classList.add('d-flex', 'flex-row');
 
   // Limpar campos ao fechar
   document.getElementById('processNumber').value = '';
@@ -329,18 +217,16 @@ document.getElementById('newForm').addEventListener('click', async () => {
   const statusDiv = document.getElementById('status');
 
   try {
-    const url = 'https://solutta.zeev.it/1.0/anonymous?c=rPhXBidDIyatU65md%2BGPxwJcU1fSGyD4jw0MW9a1mdjN28skW%2FA%2FoH4PaWn9sFSoLBiVDrLWE4XAmWoOoWisprSECTjPmB0lYm8MHGLU%2BC4%3D';
-
     // Cria nova aba
     await chrome.tabs.create({
-      url: url,
+      url: ZEEV_URLS.FORM_URL,
       active: true
     });
 
     window.close(); // Fecha o popup
 
   } catch (error) {
-    statusDiv.className = 'status error';
+    statusDiv.className = 'status-message alert alert-danger show';
     statusDiv.textContent = 'Erro ao abrir: ' + error.message;
   }
 });
@@ -353,9 +239,18 @@ document.getElementById('fillForm').addEventListener('click', async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     // Check if it's the correct URL
-    if (!tab.url.includes('solutta.zeev.it')) {
-      statusDiv.className = 'status warning';
+    const isZeevFormPage = tab.url && (
+      tab.url.startsWith(ZEEV_URLS.FORM_URL) ||
+      (tab.url.includes(ZEEV_URLS.BASE_DOMAIN) && tab.url.includes('/workflow/'))
+    );
+
+    if (!isZeevFormPage) {
+      statusDiv.className = 'status-message alert alert-warning show';
       statusDiv.textContent = 'Abra o formulário Zeev primeiro!';
+      setTimeout(() => {
+        statusDiv.className = 'status-message';
+        statusDiv.textContent = '';
+      }, 3000);
       return;
     }
 
@@ -363,8 +258,12 @@ document.getElementById('fillForm').addEventListener('click', async () => {
     const data = await chrome.storage.sync.get(['formData', 'monthFormat']);
 
     if (!data.formData) {
-      statusDiv.className = 'status warning';
+      statusDiv.className = 'status-message alert alert-warning show';
       statusDiv.textContent = 'Configure seus dados primeiro!';
+      setTimeout(() => {
+        statusDiv.className = 'status-message';
+        statusDiv.textContent = '';
+      }, 3000);
       return;
     }
 
@@ -378,16 +277,16 @@ document.getElementById('fillForm').addEventListener('click', async () => {
       args: [data.formData, monthFormat]
     });
 
-    statusDiv.className = 'status success';
+    statusDiv.className = 'status-message alert alert-success show';
     statusDiv.textContent = 'Formulário preenchido com sucesso!';
 
     setTimeout(() => {
+      statusDiv.className = 'status-message';
       statusDiv.textContent = '';
-      statusDiv.className = 'status';
     }, 3000);
 
   } catch (error) {
-    statusDiv.className = 'status error';
+    statusDiv.className = 'status-message alert alert-danger show';
     statusDiv.textContent = 'Erro ao preencher: ' + error.message;
   }
 });
@@ -400,48 +299,68 @@ document.getElementById('loadFromPage').addEventListener('click', async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     // Check if it's the correct URL
-    if (!tab.url.includes('solutta.zeev.it')) {
-      statusDiv.className = 'status warning';
+    const isZeevFormPage = tab.url && (
+      tab.url.startsWith(ZEEV_URLS.FORM_URL) ||
+      (tab.url.includes(ZEEV_URLS.BASE_DOMAIN) && tab.url.includes('/workflow/'))
+    );
+
+    if (!isZeevFormPage) {
+      statusDiv.className = 'alert alert-warning';
       statusDiv.textContent = 'Abra o formulário Zeev primeiro!';
+      setTimeout(() => {
+        statusDiv.className = 'd-none';
+      }, 3000);
       return;
     }
 
-    // Mostrar modal de confirmação
-    const modal = document.getElementById('confirmModal');
-    modal.style.display = 'block';
+    // Verificar se o Bootstrap está disponível
+    if (typeof bootstrap === 'undefined') {
+      statusDiv.className = 'alert alert-danger';
+      statusDiv.textContent = 'Erro: Bootstrap não carregado. Recarregue a extensão.';
+      console.error('Bootstrap não está disponível');
+      return;
+    }
+
+    // Mostrar modal de confirmação usando Bootstrap
+    const modalElement = document.getElementById('confirmModal');
+    const modal = new bootstrap.Modal(modalElement);
+    modal.show();
 
     // Aguardar resposta do usuário
     const userConfirmed = await new Promise((resolve) => {
       const confirmBtn = document.getElementById('modalConfirm');
       const cancelBtn = document.getElementById('modalCancel');
-
-      const closeModal = () => {
-        modal.style.display = 'none';
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-      };
+      const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"]');
 
       const handleConfirm = () => {
-        closeModal();
+        modal.hide();
+        cleanup();
         resolve(true);
       };
 
       const handleCancel = () => {
-        closeModal();
+        modal.hide();
+        cleanup();
         resolve(false);
+      };
+
+      const cleanup = () => {
+        confirmBtn.removeEventListener('click', handleConfirm);
+        cancelBtn.removeEventListener('click', handleCancel);
+        closeButtons.forEach(btn => btn.removeEventListener('click', handleCancel));
       };
 
       confirmBtn.addEventListener('click', handleConfirm);
       cancelBtn.addEventListener('click', handleCancel);
+      closeButtons.forEach(btn => btn.addEventListener('click', handleCancel));
     });
 
     // Se o usuário cancelou, não faz nada
     if (!userConfirmed) {
-      statusDiv.className = 'status warning';
+      statusDiv.className = 'alert alert-warning';
       statusDiv.textContent = 'Operação cancelada!';
       setTimeout(() => {
-        statusDiv.textContent = '';
-        statusDiv.className = 'status';
+        statusDiv.className = 'd-none';
       }, 2000);
       return;
     }
@@ -455,7 +374,7 @@ document.getElementById('loadFromPage').addEventListener('click', async () => {
     const extractedData = results[0].result;
 
     if (!extractedData || Object.keys(extractedData).length === 0) {
-      statusDiv.className = 'status warning';
+      statusDiv.className = 'alert alert-warning';
       statusDiv.textContent = 'Nenhum dado encontrado na página!';
       return;
     }
@@ -463,69 +382,18 @@ document.getElementById('loadFromPage').addEventListener('click', async () => {
     // Save extracted data
     await chrome.storage.sync.set({ formData: extractedData });
 
-    statusDiv.className = 'status success';
+    statusDiv.className = 'status-message alert alert-success show';
     statusDiv.textContent = 'Dados carregados e salvos com sucesso!';
 
     setTimeout(() => {
+      statusDiv.className = 'status-message';
       statusDiv.textContent = '';
-      statusDiv.className = 'status';
     }, 3000);
 
   } catch (error) {
-    statusDiv.className = 'status error';
+    statusDiv.className = 'alert alert-danger';
     statusDiv.textContent = 'Erro ao carregar: ' + error.message;
   }
-});
-
-// Exportar configurações para JSON
-document.getElementById('exportConfig').addEventListener('click', async () => {
-  const statusDiv = document.getElementById('status');
-
-  try {
-    // Get saved data
-    const data = await chrome.storage.sync.get('formData');
-
-    if (!data.formData || Object.keys(data.formData).length === 0) {
-      statusDiv.className = 'status warning';
-      statusDiv.textContent = 'Nenhum dado salvo para exportar!';
-      setTimeout(() => {
-        statusDiv.textContent = '';
-        statusDiv.className = 'status';
-      }, 2000);
-      return;
-    }
-
-    // Criar JSON formatado
-    const jsonString = JSON.stringify(data.formData, null, 2);
-    const blob = new Blob([jsonString], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-
-    // Criar link de download
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `zeev-config-${new Date().toISOString().split('T')[0]}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    statusDiv.className = 'status success';
-    statusDiv.textContent = 'Configurações exportadas com sucesso!';
-
-    setTimeout(() => {
-      statusDiv.textContent = '';
-      statusDiv.className = 'status';
-    }, 3000);
-
-  } catch (error) {
-    statusDiv.className = 'status error';
-    statusDiv.textContent = 'Erro ao exportar: ' + error.message;
-  }
-});
-
-// Importar configurações do JSON
-document.getElementById('importConfig').addEventListener('click', () => {
-  document.getElementById('fileInput').click();
 });
 
 // Buscar Info - Faz requisição para o portal Zeev
@@ -536,17 +404,17 @@ document.getElementById('searchInfo').addEventListener('click', async () => {
 
   // Validar inputs
   if (!processNumber || !verifier) {
-    statusDiv.className = 'status warning';
+    statusDiv.className = 'alert alert-warning';
     statusDiv.textContent = 'Preencha todos os campos!';
     setTimeout(() => {
+      statusDiv.className = 'd-none';
       statusDiv.textContent = '';
-      statusDiv.className = 'status';
     }, 3000);
     return;
   }
 
   try {
-    statusDiv.className = 'status';
+    statusDiv.className = 'alert alert-info';
     statusDiv.textContent = 'Buscando informações...';
 
     // Fazer requisição para o endpoint
@@ -575,7 +443,7 @@ document.getElementById('searchInfo').addEventListener('click', async () => {
 
     // Verificar se a resposta foi bem-sucedida
     if (data.statusResult === 'success' && data.urlToReport) {
-      statusDiv.className = 'status success';
+      statusDiv.className = 'alert alert-success';
       statusDiv.textContent = 'Informações encontradas! Abrindo relatório...';
 
       // Abrir URL em nova guia
@@ -592,135 +460,25 @@ document.getElementById('searchInfo').addEventListener('click', async () => {
         document.getElementById('verifier').value = '';
       }, 2000);
     } else {
-      statusDiv.className = 'status error';
+      statusDiv.className = 'alert alert-danger';
       statusDiv.textContent = data.message || 'Erro ao buscar informações. Verifique os dados informados. ' + JSON.stringify(data);
 
       setTimeout(() => {
+        statusDiv.className = 'd-none';
         statusDiv.textContent = '';
-        statusDiv.className = 'status';
       }, 4000);
     }
 
   } catch (error) {
-    statusDiv.className = 'status error';
+    statusDiv.className = 'alert alert-danger';
     statusDiv.textContent = 'Erro ao buscar: ' + error.message;
 
     setTimeout(() => {
+      statusDiv.className = 'd-none';
       statusDiv.textContent = '';
-      statusDiv.className = 'status';
     }, 3000);
   }
 });
-
-document.getElementById('fileInput').addEventListener('change', async (event) => {
-  const statusDiv = document.getElementById('status');
-  const file = event.target.files[0];
-
-  if (!file) return;
-
-  try {
-    // Ler arquivo JSON
-    const text = await file.text();
-    let importedData;
-
-    try {
-      importedData = JSON.parse(text);
-    } catch (parseError) {
-      statusDiv.className = 'status error';
-      statusDiv.textContent = 'Arquivo JSON inválido!';
-      setTimeout(() => {
-        statusDiv.textContent = '';
-        statusDiv.className = 'status';
-      }, 3000);
-      return;
-    }
-
-    // Verificar se há dados válidos
-    if (!importedData || typeof importedData !== 'object' || Object.keys(importedData).length === 0) {
-      statusDiv.className = 'status warning';
-      statusDiv.textContent = 'Arquivo JSON não contém dados válidos!';
-      setTimeout(() => {
-        statusDiv.textContent = '';
-        statusDiv.className = 'status';
-      }, 3000);
-      return;
-    }
-
-    // Mostrar modal de confirmação
-    const modal = document.getElementById('confirmModal');
-    const modalBody = modal.querySelector('.modal-body');
-    const originalMessage = modalBody.innerHTML;
-
-    modalBody.innerHTML = `
-      Tem certeza que deseja importar as configurações do arquivo?<br>
-      <strong>Os dados salvos anteriormente serão substituídos.</strong><br>
-      <br>
-      <small>Arquivo: ${file.name}</small>
-    `;
-
-    modal.style.display = 'block';
-
-    // Aguardar resposta do usuário
-    const userConfirmed = await new Promise((resolve) => {
-      const confirmBtn = document.getElementById('modalConfirm');
-      const cancelBtn = document.getElementById('modalCancel');
-
-      const closeModal = () => {
-        modal.style.display = 'none';
-        modalBody.innerHTML = originalMessage;
-        confirmBtn.removeEventListener('click', handleConfirm);
-        cancelBtn.removeEventListener('click', handleCancel);
-      };
-
-      const handleConfirm = () => {
-        closeModal();
-        resolve(true);
-      };
-
-      const handleCancel = () => {
-        closeModal();
-        resolve(false);
-      };
-
-      confirmBtn.addEventListener('click', handleConfirm);
-      cancelBtn.addEventListener('click', handleCancel);
-    });
-
-    // Limpar input file
-    event.target.value = '';
-
-    // Se o usuário cancelou, não faz nada
-    if (!userConfirmed) {
-      statusDiv.className = 'status warning';
-      statusDiv.textContent = 'Importação cancelada!';
-      setTimeout(() => {
-        statusDiv.textContent = '';
-        statusDiv.className = 'status';
-      }, 2000);
-      return;
-    }
-
-    // Salvar dados importados
-    await chrome.storage.sync.set({ formData: importedData });
-
-    // Habilitar botão de exportar
-    document.getElementById('exportConfig').disabled = false;
-
-    statusDiv.className = 'status success';
-    statusDiv.textContent = 'Configurações importadas com sucesso!';
-
-    setTimeout(() => {
-      statusDiv.textContent = '';
-      statusDiv.className = 'status';
-    }, 3000);
-
-  } catch (error) {
-    statusDiv.className = 'status error';
-    statusDiv.textContent = 'Erro ao importar: ' + error.message;
-    event.target.value = '';
-  }
-});
-
 
 // This function will be injected into the page
 function fillFormFields(savedData, monthFormat) {
