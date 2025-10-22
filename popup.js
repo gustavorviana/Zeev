@@ -47,10 +47,7 @@ function showUpdateBanner(updateInfo) {
     const loadFromPageBtn = document.getElementById('loadFromPage');
 
     // Verificar se a aba atual é do formulário Zeev (URL específica ou contém o domínio base)
-    const isZeevFormPage = tab.url && (ZEEV_URLS.ALLOWED_FORM_URLS.findIndex(x => tab.url.includes(x)) ||
-      tab.url.startsWith(ZEEV_URLS.FORM_URL) ||
-      (tab.url.includes(ZEEV_URLS.BASE_DOMAIN) && tab.url.includes('/workflow/'))
-    );
+    const isZeevFormPage = isZeevForm(tab.url);
 
     if (isZeevFormPage) {
       // Está no Zeev, verificar se é tela de leitura
@@ -240,10 +237,7 @@ document.getElementById('fillForm').addEventListener('click', async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     // Check if it's the correct URL
-    const isZeevFormPage = tab.url && (
-      tab.url.startsWith(ZEEV_URLS.FORM_URL) ||
-      (tab.url.includes(ZEEV_URLS.BASE_DOMAIN) && tab.url.includes('/workflow/'))
-    );
+    const isZeevFormPage = isZeevForm(tab.url);
 
     if (!isZeevFormPage) {
       statusDiv.className = 'status-message alert alert-warning show';
@@ -292,6 +286,18 @@ document.getElementById('fillForm').addEventListener('click', async () => {
   }
 });
 
+
+/**
+ * 
+ * @param {string} url 
+ */
+function isZeevForm(url) {
+  return url && (ZEEV_URLS.ALLOWED_FORM_URLS.findIndex(x => url.includes(x)) ||
+    url.startsWith(ZEEV_URLS.FORM_URL) ||
+    (url.includes(ZEEV_URLS.BASE_DOMAIN) && url.includes('/workflow/'))
+  )
+}
+
 document.getElementById('loadFromPage').addEventListener('click', async () => {
   const statusDiv = document.getElementById('status');
 
@@ -300,10 +306,7 @@ document.getElementById('loadFromPage').addEventListener('click', async () => {
     const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
 
     // Check if it's the correct URL
-    const isZeevFormPage = tab.url && (
-      tab.url.startsWith(ZEEV_URLS.FORM_URL) ||
-      (tab.url.includes(ZEEV_URLS.BASE_DOMAIN) && tab.url.includes('/workflow/'))
-    );
+    const isZeevFormPage = isZeevForm(tab.url);
 
     if (!isZeevFormPage) {
       statusDiv.className = 'alert alert-warning';
