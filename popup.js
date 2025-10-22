@@ -292,7 +292,7 @@ document.getElementById('fillForm').addEventListener('click', async () => {
  * @param {string} url 
  */
 function isZeevForm(url) {
-  return url && (ZEEV_URLS.ALLOWED_FORM_URLS.findIndex(x => url.includes(x)) ||
+  return url && (ZEEV_URLS.ALLOWED_FORM_URLS.findIndex(x => url.includes(x)) >= 0 ||
     url.startsWith(ZEEV_URLS.FORM_URL) ||
     (url.includes(ZEEV_URLS.BASE_DOMAIN) && url.includes('/workflow/'))
   )
