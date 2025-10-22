@@ -3,7 +3,7 @@ let updateCheckerInstance = null;
 
 // URLs do Zeev
 const ZEEV_URLS = {
-  ALLOWED_FORM_URLS: ['solutta.zeev.it/1.0/anonymous', 'solutta.zeev.it/1.0/request'],
+  ALLOWED_FORM_URLS: ['solutta.zeev.it/1.0/anonymous', 'solutta.zeev.it/1.0/request', 'solutta.zeev.it/1.0/auditt'],
   FORM_URL: 'https://solutta.zeev.it/1.0/anonymous?c=rPhXBidDIyatU65md%2BGPxwJcU1fSGyD4jw0MW9a1mdjN28skW%2FA%2FoH4PaWn9sFSoLBiVDrLWE4XAmWoOoWisprSECTjPmB0lYm8MHGLU%2BC4%3D',
   BASE_DOMAIN: 'solutta.zeev.it'
 };
