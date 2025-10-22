@@ -3,6 +3,7 @@ let updateCheckerInstance = null;
 
 // URLs do Zeev
 const ZEEV_URLS = {
+  ALLOWED_FORM_URLS: ['solutta.zeev.it/1.0/anonymous', 'solutta.zeev.it/1.0/request'],
   FORM_URL: 'https://solutta.zeev.it/1.0/anonymous?c=rPhXBidDIyatU65md%2BGPxwJcU1fSGyD4jw0MW9a1mdjN28skW%2FA%2FoH4PaWn9sFSoLBiVDrLWE4XAmWoOoWisprSECTjPmB0lYm8MHGLU%2BC4%3D',
   BASE_DOMAIN: 'solutta.zeev.it'
 };
@@ -46,7 +47,7 @@ function showUpdateBanner(updateInfo) {
     const loadFromPageBtn = document.getElementById('loadFromPage');
 
     // Verificar se a aba atual é do formulário Zeev (URL específica ou contém o domínio base)
-    const isZeevFormPage = tab.url && (
+    const isZeevFormPage = tab.url && (ZEEV_URLS.ALLOWED_FORM_URLS.findIndex(x => tab.url.includes(x)) ||
       tab.url.startsWith(ZEEV_URLS.FORM_URL) ||
       (tab.url.includes(ZEEV_URLS.BASE_DOMAIN) && tab.url.includes('/workflow/'))
     );
@@ -161,34 +162,34 @@ document.getElementById('toggleSearchBtn2').addEventListener('click', async () =
   newFormBtn.parentElement.classList.remove('d-flex', 'flex-row');
   newFormBtn.parentElement.classList.add('d-grid');
 
-    // Tentar extrair informações da página automaticamente
-    try {
-      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
-      const results = await chrome.scripting.executeScript({
-        target: { tabId: tab.id },
-        function: extractProcessInfoFromPage
-      });
+  // Tentar extrair informações da página automaticamente
+  try {
+    const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+    const results = await chrome.scripting.executeScript({
+      target: { tabId: tab.id },
+      function: extractProcessInfoFromPage
+    });
 
-      const extractedInfo = results[0].result;
+    const extractedInfo = results[0].result;
 
-      if (extractedInfo && extractedInfo.processNumber && extractedInfo.verifier) {
-        // Preencher os campos automaticamente
-        document.getElementById('processNumber').value = extractedInfo.processNumber;
-        document.getElementById('verifier').value = extractedInfo.verifier;
+    if (extractedInfo && extractedInfo.processNumber && extractedInfo.verifier) {
+      // Preencher os campos automaticamente
+      document.getElementById('processNumber').value = extractedInfo.processNumber;
+      document.getElementById('verifier').value = extractedInfo.verifier;
 
-        // Mostrar feedback visual
-        const statusDiv = document.getElementById('status');
-        statusDiv.className = 'status-message alert alert-success show';
-        statusDiv.textContent = 'Informações detectadas automaticamente!';
+      // Mostrar feedback visual
+      const statusDiv = document.getElementById('status');
+      statusDiv.className = 'status-message alert alert-success show';
+      statusDiv.textContent = 'Informações detectadas automaticamente!';
 
-        setTimeout(() => {
-          statusDiv.textContent = '';
-          statusDiv.className = 'status-message';
-        }, 3000);
-      }
-    } catch (extractError) {
-      console.log('Não foi possível extrair informações da página:', extractError);
+      setTimeout(() => {
+        statusDiv.textContent = '';
+        statusDiv.className = 'status-message';
+      }, 3000);
     }
+  } catch (extractError) {
+    console.log('Não foi possível extrair informações da página:', extractError);
+  }
 });
 
 // Botão para fechar a seção de busca
