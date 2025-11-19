@@ -4,7 +4,7 @@ let updateCheckerInstance = null;
 // URLs do Zeev
 const ZEEV_URLS = {
   ALLOWED_FORM_URLS: ['solutta.zeev.it/1.0/anonymous', 'solutta.zeev.it/1.0/request', 'solutta.zeev.it/1.0/auditt'],
-  FORM_URL: 'https://solutta.zeev.it/1.0/anonymous?c=rPhXBidDIyatU65md%2BGPxwJcU1fSGyD4jw0MW9a1mdjN28skW%2FA%2FoH4PaWn9sFSoLBiVDrLWE4XAmWoOoWisprSECTjPmB0lYm8MHGLU%2BC4%3D',
+  FORM_URL: 'https://solutta.zeev.it/2.0/anonymous?c=MH8LCByGEtnEOcKp2Wna2oJaKG7rByIaMBNnnchzTiOKBaWOlVTAbokvpTtD8%2FBqZqTaPRkmw%2F%2FQdb%2FmKwDpzXOP69N%2F1GzLFCQ6GwdRVoo%3D#top',
   BASE_DOMAIN: 'solutta.zeev.it'
 };
 
@@ -250,7 +250,7 @@ document.getElementById('fillForm').addEventListener('click', async () => {
     }
 
     // Get saved data and month format
-    const data = await chrome.storage.sync.get(['formData', 'monthFormat']);
+    const data = await chrome.storage.sync.get(['formData', 'monthFormat', 'formName']);
 
     if (!data.formData) {
       statusDiv.className = 'status-message alert alert-warning show';
@@ -269,7 +269,7 @@ document.getElementById('fillForm').addEventListener('click', async () => {
     await chrome.scripting.executeScript({
       target: { tabId: tab.id },
       function: fillFormFields,
-      args: [data.formData, monthFormat]
+      args: [data.formData, monthFormat, data.formName || '']
     });
 
     statusDiv.className = 'status-message alert alert-success show';
@@ -375,16 +375,21 @@ document.getElementById('loadFromPage').addEventListener('click', async () => {
       function: extractFormData
     });
 
-    const extractedData = results[0].result;
+    const extractedResult = results[0].result;
 
-    if (!extractedData || Object.keys(extractedData).length === 0) {
+    if (!extractedResult || !extractedResult.formData || Object.keys(extractedResult.formData).length === 0) {
       statusDiv.className = 'alert alert-warning';
       statusDiv.textContent = 'Nenhum dado encontrado na página!';
       return;
     }
 
-    // Save extracted data
-    await chrome.storage.sync.set({ formData: extractedData });
+    // Save extracted data, labels, groups and form name
+    await chrome.storage.sync.set({
+      formData: extractedResult.formData,
+      fieldLabels: extractedResult.fieldLabels || {},
+      fieldGroups: extractedResult.fieldGroups || {},
+      formName: extractedResult.formName || ''
+    });
 
     statusDiv.className = 'status-message alert alert-success show';
     statusDiv.textContent = 'Dados carregados e salvos com sucesso!';
@@ -485,13 +490,33 @@ document.getElementById('searchInfo').addEventListener('click', async () => {
 });
 
 // This function will be injected into the page
-function fillFormFields(savedData, monthFormat) {
+function fillFormFields(savedData, monthFormat, savedFormName) {
   // Verifica se está em um iframe e redireciona se necessário
   const iframe = document.querySelector("iframe");
   if (iframe) {
     if (iframe.src !== 'https://solutta.zeev.it/workflow/empty.html') {
       window.location.href = iframe.src;
       return;
+    }
+  }
+
+  // Verificar se o nome do formulário é diferente do salvo
+  if (savedFormName) {
+    const currentFormNameElement = document.querySelector('h5.small.d-inline.text-dark');
+    if (currentFormNameElement) {
+      const currentFormName = currentFormNameElement.textContent.trim();
+      if (currentFormName && currentFormName !== savedFormName) {
+        // Mostrar alerta informando que está em um form diferente
+        const message = `⚠️ ATENÇÃO: Você está em um formulário diferente!\n\n` +
+          `Formulário salvo: "${savedFormName}"\n` +
+          `Formulário atual: "${currentFormName}"\n\n` +
+          `Os campos podem não corresponder corretamente. Deseja continuar mesmo assim?`;
+        
+        const userConfirmed = confirm(message);
+        if (!userConfirmed) {
+          return;
+        }
+      }
     }
   }
 
@@ -515,117 +540,461 @@ function fillFormFields(savedData, monthFormat) {
   // Formatar o mês usando o template configurado
   const formattedMonth = monthFormat ? formatMonth(monthFormat) : ((new Date().getMonth() + 1) + " - " + new Date().getFullYear());
 
-  // Prepara os dados com valores automáticos
-  const data = {
-    inpnomeSolicitante: savedData.inpnomeSolicitante || "",
-    inpemailDoSolicitante: savedData.inpemailDoSolicitante || "",
-    inpdiretoriaCeoParecer: savedData.inpdiretoriaCeoParecer || "",
-    inpdataSolicitacao: new Date().toLocaleString().split(",")[0],
-    inpempresaContratante: savedData.inpempresaContratante || "",
-    inptipoDeRemuneracao: document.querySelector("[xname=inptipoDeRemuneracao]")?.value || "",
-    inpdiretorgerenteQueConfirmaExecucaoDoServicoPrestado: savedData.inpdiretorgerenteQueConfirmaExecucaoDoServicoPrestado || "",
-    inpdiretorgerenteNoSistBpmQueConfirmaExecucaoDoServicoPrestado: savedData.inpdiretorgerenteNoSistBpmQueConfirmaExecucaoDoServicoPrestado || "",
-    inparea: savedData.inparea || "",
-    inpdepartamento: savedData.inpdepartamento || "",
-    inpdescricaoServicoExecutado: savedData.inpdescricaoServicoExecutado || "",
-    inpnomeParceiroPessoaJuridica: savedData.inpnomeParceiroPessoaJuridica || "",
-    inpcodServico: savedData.inpcodServico || "",
-    inpalteracaoContratual: document.querySelector("[xname=inpalteracaoContratual]")?.value || "",
-    inpbanco: savedData.inpbanco || "",
-    inpagencia: savedData.inpagencia || "",
-    inpconta: savedData.inpconta || "",
-    inpcpf: savedData.inpcpf || "",
-    inpchavePix: savedData.inpchavePix || "",
-    inpobs: savedData.inpobs || "",
-    inpmes: formattedMonth,
-    inpvalorTotalR: savedData.inpvalorTotalR || "",
-    inpnrCentroDeCusto: savedData.inpnrCentroDeCusto || "",
-    inpempresaPagadora: savedData.inpempresaPagadora || "",
-    inpobservacao: savedData.inpobservacao || "",
-    inpvalorTotalFaturadoR: savedData.inpvalorTotalFaturadoR || "",
-    inpdataPrevistaParaCredito: savedData.inpdataPrevistaParaCredito || ""
+  // Função auxiliar para preencher um campo
+  function fillField(fieldName, value) {
+    if (!value) return false;
+
+    // Verificar se é campo múltiplo (tem formato: fieldName_groupId_rowIndex)
+    const fieldParts = fieldName.split('_');
+    const isMultipleField = fieldParts.length >= 3;
+    const baseFieldName = fieldParts[0];
+    const groupId = isMultipleField ? fieldParts[1] : null;
+    const rowIndex = isMultipleField ? parseInt(fieldParts[2]) : null;
+
+    // Tentar encontrar o campo por diferentes seletores
+    const selectors = [
+      `input[xname='${fieldName}']`,
+      `input[xname='${baseFieldName}']`,
+      `input[id='${fieldName}']`,
+      `input[id='${baseFieldName}']`,
+      `input[name='${fieldName}']`,
+      `input[name='${baseFieldName}']`,
+      `input[data-name='${fieldName}']`,
+      `input[data-name='${baseFieldName}']`,
+      `select[xname='${fieldName}']`,
+      `select[xname='${baseFieldName}']`,
+      `select[id='${fieldName}']`,
+      `select[id='${baseFieldName}']`,
+      `textarea[xname='${fieldName}']`,
+      `textarea[xname='${baseFieldName}']`
+    ];
+
+    // Primeiro, tentar radio buttons - buscar por xname, id, name e data-name
+    const radioSelectors = [
+      `input[type="radio"][xname='${fieldName}']`,
+      `input[type="radio"][xname='${baseFieldName}']`,
+      `input[type="radio"][id='${fieldName}']`,
+      `input[type="radio"][id='${baseFieldName}']`,
+      `input[type="radio"][name='${fieldName}']`,
+      `input[type="radio"][name='${baseFieldName}']`,
+      `input[type="radio"][data-name='${fieldName}']`,
+      `input[type="radio"][data-name='${baseFieldName}']`
+    ];
+
+    for (const selector of radioSelectors) {
+      const radioInputs = document.querySelectorAll(selector);
+      for (const radio of radioInputs) {
+        // Comparar valor normalizado (remover espaços, converter para string)
+        const radioValue = String(radio.value || '').trim();
+        const searchValue = String(value || '').trim();
+
+        if (radioValue === searchValue || radioValue.toLowerCase() === searchValue.toLowerCase()) {
+          // Desmarcar outros radios do mesmo grupo primeiro
+          const radioName = radio.name || radio.getAttribute('xname') || radio.getAttribute('data-name');
+          if (radioName) {
+            const groupRadios = document.querySelectorAll(`input[type="radio"][name="${radioName}"], input[type="radio"][xname="${radioName}"], input[type="radio"][data-name="${radioName}"]`);
+            groupRadios.forEach(r => r.checked = false);
+          }
+
+          radio.checked = true;
+          radio.dispatchEvent(new Event('click', { bubbles: true }));
+          radio.dispatchEvent(new Event('change', { bubbles: true }));
+          radio.dispatchEvent(new Event('input', { bubbles: true }));
+          return true;
+        }
+      }
+    }
+
+    // Se for campo múltiplo, buscar na linha específica da tabela
+    if (isMultipleField && groupId !== null && rowIndex !== null) {
+      const table = document.querySelector(`table[data-groupid="${groupId}"]`);
+      if (table) {
+        const tbody = table.querySelector('tbody');
+        if (tbody) {
+          const rows = Array.from(tbody.querySelectorAll('tr:not(.header)'));
+          if (rows[rowIndex]) {
+            const row = rows[rowIndex];
+            // Buscar input na linha específica
+            const inputs = row.querySelectorAll('input, select, textarea');
+            for (const input of inputs) {
+              const inputName = input.getAttribute('data-name') || input.id || input.name;
+              const inputBaseName = inputName ? inputName.split('_')[0] : '';
+
+              // Normalizar nomes removendo prefixo 'inp' para comparação (mesma lógica da leitura)
+              const normalizeFieldName = (name) => {
+                if (!name) return '';
+                // Remover prefixo 'inp' se presente
+                return name.startsWith('inp') ? name.substring(3) : name;
+              };
+
+              const normalizedBaseFieldName = normalizeFieldName(baseFieldName);
+              const normalizedInputBaseName = normalizeFieldName(inputBaseName);
+              const normalizedInputName = normalizeFieldName(inputName);
+
+              // Comparar nomes normalizados (com e sem prefixo 'inp')
+              if (normalizedInputBaseName === normalizedBaseFieldName || 
+                  normalizedInputName === normalizedBaseFieldName ||
+                  inputBaseName === baseFieldName || 
+                  inputName === baseFieldName) {
+                return fillInputElement(input, value);
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Depois, tentar inputs normais, selects e textareas
+    for (const selector of selectors) {
+      const element = document.querySelector(selector);
+      if (element && element.type !== 'radio' && element.type !== 'hidden') {
+        return fillInputElement(element, value);
+      }
+    }
+
+    return false;
+  }
+
+  // Função auxiliar para normalizar valor numérico para máscara decimal
+  // Remove TODA pontuação e mantém apenas números, deixando a máscara formatar
+  function normalizeDecimalValue(value) {
+    if (!value) return '';
+
+    // Converter para string
+    let strValue = String(value).trim();
+
+    // Remover TODA formatação: R$, espaços, pontos, vírgulas - manter apenas números
+    // Isso garante que "7200" fique como "7200" e não "72.00"
+    strValue = strValue.replace(/[^\d]/g, '');
+
+    // Se o valor está vazio após remover formatação, retornar vazio
+    if (!strValue) return '';
+
+    // Retornar apenas os dígitos (ex: "7200" permanece "7200")
+    // A máscara vai formatar corretamente depois
+    return strValue;
+  }
+
+  // Função auxiliar para preencher um elemento input/select/textarea
+  function fillInputElement(element, value) {
+    if (!element) return false;
+
+    let valueStr = String(value);
+    
+    // Substituir {mesAtual} pelo mês formatado se presente
+    if (valueStr.includes('{mesAtual}')) {
+      const formattedMonth = monthFormat ? formatMonth(monthFormat) : ((new Date().getMonth() + 1) + " - " + new Date().getFullYear());
+      valueStr = formattedMonth;
+    }
+
+    // Para inputs de texto e textarea, simular paste
+    if ((element.tagName === 'INPUT' && element.type !== 'radio' && element.type !== 'checkbox' && element.type !== 'hidden') || element.tagName === 'TEXTAREA') {
+      // Focar no elemento
+      element.focus();
+      
+      // Selecionar todo o conteúdo (Ctrl+A)
+      element.select();
+      
+      // Criar objeto clipboardData para o evento paste
+      let clipboardData;
+      try {
+        clipboardData = new DataTransfer();
+        clipboardData.setData('text/plain', valueStr);
+      } catch (e) {
+        // Fallback: criar objeto clipboardData manualmente
+        clipboardData = {
+          getData: function(type) {
+            return type === 'text/plain' ? valueStr : '';
+          },
+          setData: function(type, data) {
+            // Armazenar o valor
+            this._data = data;
+          },
+          types: ['text/plain'],
+          _data: valueStr
+        };
+      }
+      
+      // Simular paste usando ClipboardEvent
+      const pasteEvent = new ClipboardEvent('paste', {
+        bubbles: true,
+        cancelable: true,
+        clipboardData: clipboardData
+      });
+      
+      // Disparar o evento paste
+      const pasteHandled = element.dispatchEvent(pasteEvent);
+      
+      // Se o evento não foi cancelado e o valor mudou, o paste funcionou
+      // Caso contrário, definir o valor diretamente
+      if (!pasteHandled || element.value === '') {
+        // Tentar definir valor diretamente após um pequeno delay para permitir processamento do paste
+        setTimeout(() => {
+          if (element.value !== valueStr) {
+            element.value = valueStr;
+            element.dispatchEvent(new Event('input', { bubbles: true }));
+            element.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }, 10);
+      } else {
+        // Disparar eventos de input e change para garantir
+        element.dispatchEvent(new Event('input', { bubbles: true }));
+        element.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    } else if (element.tagName === 'SELECT') {
+      // Para select, definir valor diretamente
+      element.value = valueStr;
+      element.dispatchEvent(new Event('change', { bubbles: true }));
+    } else {
+      // Para outros tipos, definir valor diretamente
+      element.value = valueStr;
+    }
+
+    return true;
+  }
+
+  // Preencher campos de data automáticos
+  const autoFields = {
+    inpdataSolicitacao: new Date().toLocaleString('pt-BR').split(',')[0],
+    inpmes: formattedMonth
   };
 
+  // Adicionar campos automáticos aos dados salvos
+  const allData = { ...savedData, ...autoFields };
+
+  let filledCount = 0;
   let notFoundFields = [];
 
-  // Preenche os campos usando a lógica do script original
-  for (const key in data) {
-    if (!data[key]) continue; // Pula campos vazios
+  // Preencher todos os campos salvos
+  for (const fieldName in allData) {
+    const value = allData[fieldName];
+    if (!value) continue;
 
-    // Tenta preencher radio buttons
-    const inputRadio = document.querySelector(`input[xname='${key}'][value='${data[key]}']`);
-    if (inputRadio) {
-      inputRadio.checked = true;
-      inputRadio.dispatchEvent(new Event('change', { bubbles: true }));
-      continue;
+    if (fillField(fieldName, value)) {
+      filledCount++;
+    } else {
+      notFoundFields.push(fieldName);
     }
-
-    // Tenta preencher input ou select
-    const inputSelect = document.querySelector(`input[xname='${key}'],select[xname='${key}']`);
-    if (inputSelect) {
-      inputSelect.value = data[key];
-      inputSelect.dispatchEvent(new Event('input', { bubbles: true }));
-      inputSelect.dispatchEvent(new Event('change', { bubbles: true }));
-      inputSelect.dispatchEvent(new Event('blur', { bubbles: true }));
-      continue;
-    }
-
-    // Campo não encontrado
-    notFoundFields.push(key);
   }
 
   // Mostra alertas para campos não encontrados (opcional)
   if (notFoundFields.length > 0) {
     console.log('Campos não encontrados:', notFoundFields);
   }
+
+  console.log(`Preenchidos: ${filledCount} de ${Object.keys(allData).length} campos`);
 }
 
 // This function will be injected into the page to extract data
 function extractFormData() {
-  const fieldNames = [
-    'inpnomeSolicitante',
-    'inpemailDoSolicitante',
-    'inpdiretoriaCeoParecer',
-    'inpempresaContratante',
-    'inpdiretorgerenteQueConfirmaExecucaoDoServicoPrestado',
-    'inpdiretorgerenteNoSistBpmQueConfirmaExecucaoDoServicoPrestado',
-    'inparea',
-    'inpdepartamento',
-    'inpdescricaoServicoExecutado',
-    'inpnomeParceiroPessoaJuridica',
-    'inpcodServico',
-    'inpbanco',
-    'inpagencia',
-    'inpconta',
-    'inpcpf',
-    'inpchavePix',
-    'inpobs',
-    'inpvalorTotalR',
-    'inpnrCentroDeCusto',
-    'inpempresaPagadora',
-    'inpobservacao',
-    'inpvalorTotalFaturadoR',
-    'inpdataPrevistaParaCredito'
-  ];
-
   const extractedData = {};
+  const fieldLabels = {};
+  const fieldGroups = {};
 
-  fieldNames.forEach(fieldName => {
-    // Tenta pegar valor de radio button marcado
-    const radioChecked = document.querySelector(`input[xname='${fieldName}']:checked`);
-    if (radioChecked) {
-      extractedData[fieldName] = radioChecked.value;
-      return;
+  // Buscar todas as tables com data-groupid
+  const tables = document.querySelectorAll('table[data-groupid]');
+
+  tables.forEach(table => {
+    const groupId = table.getAttribute('data-groupid');
+    const tbody = table.querySelector('tbody');
+
+    if (!tbody) return;
+
+    // Buscar título do grupo: caption da table ou tr.group acima
+    let groupTitle = '';
+    const caption = table.querySelector('caption');
+    if (caption) {
+      groupTitle = caption.textContent.trim();
+    } else {
+      // Buscar tr.group que contém o groupId
+      const groupRow = document.querySelector(`tr.group b[data-key="${groupId}"]`);
+      if (groupRow) {
+        groupTitle = groupRow.textContent.trim();
+      }
     }
 
-    // Tenta pegar valor de input ou select
-    const inputSelect = document.querySelector(`input[xname='${fieldName}'],select[xname='${fieldName}']`);
-    if (inputSelect && inputSelect.value) {
-      extractedData[fieldName] = inputSelect.value;
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+
+    // Verificar se é formato múltiplo (tem linha com class="header")
+    const hasHeaderRow = rows.some(row => row.classList.contains('header'));
+
+    if (hasHeaderRow) {
+      // Formato múltiplo: linha header tem os nomes, linhas seguintes têm os valores
+      const headerRow = rows.find(row => row.classList.contains('header'));
+      if (!headerRow) return;
+
+      // Extrair nomes das colunas do header (ignorar primeira coluna que geralmente tem botões)
+      const headerCells = Array.from(headerRow.querySelectorAll('td'));
+      const columnInfo = [];
+
+      headerCells.forEach((cell, index) => {
+        // Pular primeira coluna se tiver botão
+        if (index === 0 && cell.querySelector('button')) {
+          return;
+        }
+
+        const columnName = cell.getAttribute('column-name');
+        const label = cell.textContent.trim();
+
+        if (columnName && label) {
+          columnInfo.push({
+            columnName: columnName,
+            label: label,
+            index: index
+          });
+        }
+      });
+
+      // Processar linhas de dados (ignorar linha header)
+      // Filtrar apenas linhas de dados para calcular o índice correto
+      const dataRows = rows.filter(row => !row.classList.contains('header'));
+      
+      dataRows.forEach((row, dataRowIndex) => {
+        const dataCells = Array.from(row.querySelectorAll('td'));
+
+        // Pular primeira coluna se tiver botão
+        let cellIndex = 0;
+        if (dataCells[0] && dataCells[0].querySelector('button')) {
+          cellIndex = 1;
+        }
+
+        columnInfo.forEach((colInfo) => {
+          if (cellIndex >= dataCells.length) return;
+
+          const cell = dataCells[cellIndex];
+          const input = cell.querySelector('input, select, textarea');
+
+          if (input) {
+            // Ignorar campos hidden (mesma lógica da aplicação)
+            if (input.type === 'hidden') {
+              cellIndex++;
+              return;
+            }
+
+            // Obter valores originais antes de normalizar
+            const originalDataName = input.getAttribute('data-name') || '';
+            const originalId = input.id || '';
+            const originalName = input.name || '';
+
+            // Verificar se o campo contém "mesReferencia" ANTES de normalizar
+            const isMesReferencia = 
+              originalDataName.toLowerCase().includes('mesreferencia') ||
+              originalDataName.toLowerCase().includes('mes_referencia') ||
+              originalId.toLowerCase().includes('mesreferencia') ||
+              originalId.toLowerCase().includes('mes_referencia') ||
+              originalName.toLowerCase().includes('mesreferencia') ||
+              originalName.toLowerCase().includes('mes_referencia');
+
+            // Usar data-name, id ou name como identificador do campo
+            let fieldName = originalDataName || originalId || originalName;
+
+            // Se não encontrou nome, tentar derivar do column-name
+            if (!fieldName) {
+              fieldName = colInfo.columnName.replace('col', 'inp');
+            }
+
+            // Garantir que tenha prefixo 'inp' se necessário
+            if (fieldName && !fieldName.startsWith('inp')) {
+              fieldName = `inp${fieldName}`;
+            }
+
+            let value = input.value || '';
+            const label = colInfo.label || '';
+
+            // Se for campo mesReferencia, salvar como {mesAtual}
+            if (isMesReferencia) {
+              value = '{mesAtual}';
+            }
+
+            if (fieldName) {
+              // Para campos múltiplos, usar uma chave única por linha
+              // Usar dataRowIndex que corresponde à posição real na lista de linhas de dados
+              const uniqueKey = `${fieldName}_${groupId}_${dataRowIndex}`;
+              extractedData[uniqueKey] = value;
+              fieldLabels[uniqueKey] = label;
+              fieldGroups[uniqueKey] = {
+                groupId: groupId,
+                groupTitle: groupTitle,
+                rowIndex: dataRowIndex
+              };
+            }
+          }
+
+          cellIndex++;
+        });
+      });
+    } else {
+      // Formato simples: 2 TDs - primeiro tem nome, segundo tem valor
+      rows.forEach(row => {
+        const cells = Array.from(row.querySelectorAll('td'));
+
+        if (cells.length >= 2) {
+          const nameCell = cells[0];
+          const valueCell = cells[1];
+
+          // Verificar se a célula de valor tem input
+          const input = valueCell.querySelector('input, select, textarea');
+
+          if (input) {
+            // Ignorar campos hidden (mesma lógica da aplicação)
+            if (input.type === 'hidden') {
+              return;
+            }
+
+            // Obter valores originais antes de normalizar
+            const originalDataName = input.getAttribute('data-name') || '';
+            const originalId = input.id || '';
+            const originalName = input.name || '';
+
+            // Verificar se o campo contém "mesReferencia" ANTES de normalizar
+            const isMesReferencia = 
+              originalDataName.toLowerCase().includes('mesreferencia') ||
+              originalDataName.toLowerCase().includes('mes_referencia') ||
+              originalId.toLowerCase().includes('mesreferencia') ||
+              originalId.toLowerCase().includes('mes_referencia') ||
+              originalName.toLowerCase().includes('mesreferencia') ||
+              originalName.toLowerCase().includes('mes_referencia');
+
+            // Usar data-name, id ou name como identificador do campo
+            let fieldName = originalDataName || originalId || originalName;
+            let value = input.value || '';
+            const label = nameCell.textContent.trim();
+
+            // Se for campo mesReferencia, salvar como {mesAtual}
+            if (isMesReferencia) {
+              value = '{mesAtual}';
+            }
+
+            if (fieldName) {
+              // Adicionar prefixo 'inp' se não tiver
+              const normalizedFieldName = fieldName.startsWith('inp') ? fieldName : `inp${fieldName}`;
+              extractedData[normalizedFieldName] = value;
+              fieldLabels[normalizedFieldName] = label;
+              fieldGroups[normalizedFieldName] = {
+                groupId: groupId,
+                groupTitle: groupTitle
+              };
+            }
+          }
+        }
+      });
     }
   });
 
-  return extractedData;
+  // Buscar o nome do formulário (h5 com classe "small d-inline text-dark")
+  let formName = '';
+  const formNameElement = document.querySelector('h5.small.d-inline.text-dark');
+  if (formNameElement) {
+    formName = formNameElement.textContent.trim();
+  }
+
+  // Retornar dados com labels, grupos e nome do formulário
+  return {
+    formData: extractedData,
+    fieldLabels: fieldLabels,
+    fieldGroups: fieldGroups,
+    formName: formName
+  };
 }
 
 // This function will be injected into the page to extract process info
